@@ -1,0 +1,57 @@
+## Ignore Visual Studio files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Build results
+bin/
+obj/
+out/
+
+## Rider / VS Code
+.idea/
+.vscode/
+
+## ASP.NET Core
+appsettings.Development.json
+appsettings.Local.json
+
+## Logs
+*.log
+logs/
+
+## OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+## NuGet
+*.nupkg
+# packages/   # (uncomment only for old .NET Framework projects)
+
+## Publish output
+publish/
+wwwroot/lib/
+
+## Test results
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+## DotNet CLI artifacts
+.project
+.settings/
+*.dbmdl
+*.jfm
+*.cache
+
+## User secrets
+secrets.json
+
+## Environment files
+.env
+.env.*
