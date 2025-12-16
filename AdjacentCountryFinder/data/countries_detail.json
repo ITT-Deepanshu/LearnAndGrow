@@ -1,0 +1,500 @@
+{
+  "AF": {
+    "Name": "Afghanistan",
+    "Neighbors": [
+      "China",
+      "Iran",
+      "Pakistan",
+      "Tajikistan",
+      "Turkmenistan",
+      "Uzbekistan"
+    ]
+  },
+  "AL": {
+    "Name": "Albania",
+    "Neighbors": [
+      "Greece",
+      "North Macedonia",
+      "Montenegro",
+      "Serbia"
+    ]
+  },
+  "DZ": {
+    "Name": "Algeria",
+    "Neighbors": [
+      "Libya",
+      "Mali",
+      "Mauritania",
+      "Morocco",
+      "Niger",
+      "Tunisia"
+    ]
+  },
+  "AD": {
+    "Name": "Andorra",
+    "Neighbors": [
+      "France",
+      "Spain"
+    ]
+  },
+  "AO": {
+    "Name": "Angola",
+    "Neighbors": [
+      "Democratic Republic of the Congo",
+      "Republic of the Congo",
+      "Namibia",
+      "Zambia"
+    ]
+  },
+  "AR": {
+    "Name": "Argentina",
+    "Neighbors": [
+      "Bolivia",
+      "Brazil",
+      "Chile",
+      "Paraguay",
+      "Uruguay"
+    ]
+  },
+  "AM": {
+    "Name": "Armenia",
+    "Neighbors": [
+      "Azerbaijan",
+      "Georgia",
+      "Iran",
+      "Turkey"
+    ]
+  },
+  "AU": {
+    "Name": "Australia",
+    "Neighbors": []
+  },
+  "AT": {
+    "Name": "Austria",
+    "Neighbors": [
+      "Czech Republic",
+      "Germany",
+      "Hungary",
+      "Italy",
+      "Liechtenstein",
+      "Slovakia",
+      "Slovenia",
+      "Switzerland"
+    ]
+  },
+  "AZ": {
+    "Name": "Azerbaijan",
+    "Neighbors": [
+      "Armenia",
+      "Georgia",
+      "Iran",
+      "Russia",
+      "Turkey"
+    ]
+  },
+  "BD": {
+    "Name": "Bangladesh",
+    "Neighbors": [
+      "India",
+      "Myanmar"
+    ]
+  },
+  "BE": {
+    "Name": "Belgium",
+    "Neighbors": [
+      "France",
+      "Germany",
+      "Luxembourg",
+      "Netherlands"
+    ]
+  },
+  "BT": {
+    "Name": "Bhutan",
+    "Neighbors": [
+      "China",
+      "India"
+    ]
+  },
+  "BO": {
+    "Name": "Bolivia",
+    "Neighbors": [
+      "Argentina",
+      "Brazil",
+      "Chile",
+      "Paraguay",
+      "Peru"
+    ]
+  },
+  "BR": {
+    "Name": "Brazil",
+    "Neighbors": [
+      "Argentina",
+      "Bolivia",
+      "Colombia",
+      "Guyana",
+      "Paraguay",
+      "Peru",
+      "SuriName",
+      "Uruguay",
+      "Venezuela"
+    ]
+  },
+  "CA": {
+    "Name": "Canada",
+    "Neighbors": [
+      "United States"
+    ]
+  },
+  "CN": {
+    "Name": "China",
+    "Neighbors": [
+      "Afghanistan",
+      "Bhutan",
+      "India",
+      "Kazakhstan",
+      "Kyrgyzstan",
+      "Laos",
+      "Mongolia",
+      "Myanmar",
+      "Nepal",
+      "North Korea",
+      "Pakistan",
+      "Russia",
+      "Tajikistan",
+      "Vietnam"
+    ]
+  },
+  "CO": {
+    "Name": "Colombia",
+    "Neighbors": [
+      "Brazil",
+      "Ecuador",
+      "Panama",
+      "Peru",
+      "Venezuela"
+    ]
+  },
+  "DK": {
+    "Name": "Denmark",
+    "Neighbors": [
+      "Germany"
+    ]
+  },
+  "EG": {
+    "Name": "Egypt",
+    "Neighbors": [
+      "Gaza Strip",
+      "Israel",
+      "Libya",
+      "Sudan"
+    ]
+  },
+  "FI": {
+    "Name": "Finland",
+    "Neighbors": [
+      "Norway",
+      "Sweden",
+      "Russia"
+    ]
+  },
+  "FR": {
+    "Name": "France",
+    "Neighbors": [
+      "Andorra",
+      "Belgium",
+      "Germany",
+      "Italy",
+      "Luxembourg",
+      "Monaco",
+      "Spain",
+      "Switzerland"
+    ]
+  },
+  "DE": {
+    "Name": "Germany",
+    "Neighbors": [
+      "Austria",
+      "Belgium",
+      "Czech Republic",
+      "Denmark",
+      "France",
+      "Luxembourg",
+      "Netherlands",
+      "Poland",
+      "Switzerland"
+    ]
+  },
+  "IN": {
+    "Name": "India",
+    "Neighbors": [
+      "Bangladesh",
+      "Bhutan",
+      "China",
+      "Myanmar",
+      "Nepal",
+      "Pakistan"
+    ]
+  },
+  "ID": {
+    "Name": "Indonesia",
+    "Neighbors": [
+      "Papua New Guinea",
+      "East Timor",
+      "Malaysia"
+    ]
+  },
+  "IR": {
+    "Name": "Iran",
+    "Neighbors": [
+      "Afghanistan",
+      "Armenia",
+      "Azerbaijan",
+      "Iraq",
+      "Pakistan",
+      "Turkey",
+      "Turkmenistan"
+    ]
+  },
+  "IQ": {
+    "Name": "Iraq",
+    "Neighbors": [
+      "Iran",
+      "Jordan",
+      "Kuwait",
+      "Saudi Arabia",
+      "Syria",
+      "Turkey"
+    ]
+  },
+  "IE": {
+    "Name": "Ireland",
+    "Neighbors": [
+      "United Kingdom"
+    ]
+  },
+  "IL": {
+    "Name": "Israel",
+    "Neighbors": [
+      "Egypt",
+      "Jordan",
+      "Lebanon",
+      "Syria"
+    ]
+  },
+  "IT": {
+    "Name": "Italy",
+    "Neighbors": [
+      "Austria",
+      "France",
+      "San Marino",
+      "Slovenia",
+      "Switzerland",
+      "Vatican City"
+    ]
+  },
+  "JP": {
+    "Name": "Japan",
+    "Neighbors": []
+  },
+  "KE": {
+    "Name": "Kenya",
+    "Neighbors": [
+      "Ethiopia",
+      "Somalia",
+      "South Sudan",
+      "Tanzania",
+      "Uganda"
+    ]
+  },
+  "MX": {
+    "Name": "Mexico",
+    "Neighbors": [
+      "Belize",
+      "Guatemala",
+      "United States"
+    ]
+  },
+  "NP": {
+    "Name": "Nepal",
+    "Neighbors": [
+      "China",
+      "India"
+    ]
+  },
+  "NL": {
+    "Name": "Netherlands",
+    "Neighbors": [
+      "Belgium",
+      "Germany"
+    ]
+  },
+  "NZ": {
+    "Name": "New Zealand",
+    "Neighbors": []
+  },
+  "NO": {
+    "Name": "Norway",
+    "Neighbors": [
+      "Finland",
+      "Sweden",
+      "Russia"
+    ]
+  },
+  "PK": {
+    "Name": "Pakistan",
+    "Neighbors": [
+      "Afghanistan",
+      "China",
+      "India",
+      "Iran"
+    ]
+  },
+  "PL": {
+    "Name": "Poland",
+    "Neighbors": [
+      "Belarus",
+      "Czech Republic",
+      "Germany",
+      "Lithuania",
+      "Russia",
+      "Slovakia",
+      "Ukraine"
+    ]
+  },
+  "PT": {
+    "Name": "Portugal",
+    "Neighbors": [
+      "Spain"
+    ]
+  },
+  "RU": {
+    "Name": "Russia",
+    "Neighbors": [
+      "Azerbaijan",
+      "Belarus",
+      "China",
+      "Estonia",
+      "Finland",
+      "Georgia",
+      "Kazakhstan",
+      "Latvia",
+      "Lithuania",
+      "Mongolia",
+      "North Korea",
+      "Norway",
+      "Poland",
+      "Ukraine"
+    ]
+  },
+  "SA": {
+    "Name": "Saudi Arabia",
+    "Neighbors": [
+      "Iraq",
+      "Jordan",
+      "Kuwait",
+      "Oman",
+      "Qatar",
+      "United Arab Emirates",
+      "Yemen"
+    ]
+  },
+  "ZA": {
+    "Name": "South Africa",
+    "Neighbors": [
+      "Botswana",
+      "Eswatini",
+      "Lesotho",
+      "Mozambique",
+      "Namibia",
+      "Zimbabwe"
+    ]
+  },
+  "ES": {
+    "Name": "Spain",
+    "Neighbors": [
+      "Andorra",
+      "France",
+      "Gibraltar",
+      "Portugal"
+    ]
+  },
+  "SE": {
+    "Name": "Sweden",
+    "Neighbors": [
+      "Finland",
+      "Norway"
+    ]
+  },
+  "CH": {
+    "Name": "Switzerland",
+    "Neighbors": [
+      "Austria",
+      "France",
+      "Germany",
+      "Italy",
+      "Liechtenstein"
+    ]
+  },
+  "TH": {
+    "Name": "Thailand",
+    "Neighbors": [
+      "Cambodia",
+      "Laos",
+      "Malaysia",
+      "Myanmar"
+    ]
+  },
+  "TR": {
+    "Name": "Turkey",
+    "Neighbors": [
+      "Armenia",
+      "Azerbaijan",
+      "Bulgaria",
+      "Georgia",
+      "Greece",
+      "Iran",
+      "Iraq",
+      "Syria"
+    ]
+  },
+  "UA": {
+    "Name": "Ukraine",
+    "Neighbors": [
+      "Belarus",
+      "Hungary",
+      "Moldova",
+      "Poland",
+      "Romania",
+      "Russia",
+      "Slovakia"
+    ]
+  },
+  "AE": {
+    "Name": "United Arab Emirates",
+    "Neighbors": [
+      "Oman",
+      "Saudi Arabia"
+    ]
+  },
+  "GB": {
+    "Name": "United Kingdom",
+    "Neighbors": [
+      "Ireland"
+    ]
+  },
+  "US": {
+    "Name": "United States",
+    "Neighbors": [
+      "Canada",
+      "Mexico"
+    ]
+  },
+  "VN": {
+    "Name": "Vietnam",
+    "Neighbors": [
+      "Cambodia",
+      "China",
+      "Laos"
+    ]
+  }
+}
