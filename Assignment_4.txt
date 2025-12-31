@@ -1,0 +1,2 @@
+Solution 4:
+Yes, the class Book follow SRP as each function is doing a specific task i.e. getTitle() is just providing the title of the book and similarly getAuthor(), getCurrentPage(), getLocation() are giving author name, currect page data and location of the book respectively. Also turnPage() is just moving the pointer to next page and lastly save() function is saving the file contents.
