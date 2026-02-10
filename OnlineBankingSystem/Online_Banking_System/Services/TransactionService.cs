@@ -1,12 +1,14 @@
 using System;
 using Online_Banking_System.Models;
 using Online_Banking_System.Repository;
+using static Enums;
 
 namespace Online_Banking_System.Services
 {
     public class TransactionService
     {
         private readonly IAccountRepository accountRepository;
+        private AccountService accountService = new AccountService(new AccountRepository());
 
         public TransactionService(IAccountRepository repository)
         {
@@ -19,7 +21,7 @@ namespace Online_Banking_System.Services
                 throw new ArgumentException("Amount must be positive!");
 
             Account account = accountRepository.GetAccount(accountNumber);
-            account.Deposit(amount);
+            accountService.Deposit(amount);
             account.Transactions.Add(new Transaction(TransactionType.Deposit, "Deposit", amount));
         }
 
@@ -30,7 +32,7 @@ namespace Online_Banking_System.Services
 
             Account account = accountRepository.GetAccount(accountNumber);
             
-            if (!account.Withdraw(amount))
+            if (!accountService.Withdraw(amount))
                 throw new InvalidOperationException("Insufficient Balance!");
 
             account.Transactions.Add(new Transaction(TransactionType.Withdrawal, "Withdrawal", -amount));
@@ -53,13 +55,13 @@ namespace Online_Banking_System.Services
             if (sender.Balance < amount)
                 throw new InvalidOperationException("Insufficient Balance!");
 
-            if (!sender.Withdraw(amount))
+            if (!accountService.Withdraw(amount))
                 throw new InvalidOperationException("Insufficient Balance!");
 
             sender.Transactions.Add(new Transaction(TransactionType.Transfer, 
                 "Transfer to " + receiverAccountNumber, -amount));
 
-            receiver.Deposit(amount);
+            accountService.Deposit(amount);
             receiver.Transactions.Add(new Transaction(TransactionType.Transfer, 
                 "Transfer from " + senderAccountNumber, amount));
         }

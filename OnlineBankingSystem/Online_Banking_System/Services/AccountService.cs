@@ -9,6 +9,7 @@ namespace Online_Banking_System.Services
     {
         private readonly IAccountRepository accountRepository;
         private static readonly Random random = new Random();
+        private Account account = new Account();
 
         public AccountService(IAccountRepository repository)
         {
@@ -110,5 +111,22 @@ namespace Online_Banking_System.Services
             Account account = GetAccount(accountNumber);
             return account.Balance;
         }
+
+        public void Deposit(decimal amount)
+        {
+            if (amount > 0)
+                account.Balance += amount;
+        }
+
+        public bool Withdraw(decimal amount)
+        {
+            if (amount > 0 && amount <= account.Balance)
+            {
+                account.Balance -= amount;
+                return true;
+            }
+            return false;
+        }
+
     }
 }

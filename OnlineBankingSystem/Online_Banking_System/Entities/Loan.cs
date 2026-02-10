@@ -1,14 +1,8 @@
 using System;
+using static Enums;
 
 namespace Online_Banking_System.Models
 {
-    public enum LoanType
-    {
-        Personal,
-        Home,
-        Car
-    }
-
     public class Loan
     {
         public string LoanId { get; }
@@ -24,40 +18,35 @@ namespace Online_Banking_System.Models
             switch (loanType)
             {
                 case LoanType.Personal:
-                    return 12.5m;
+                    return ConstantData.PersonalLoanInterestRate;
                 case LoanType.Home:
-                    return 8.5m;
+                    return ConstantData.HomeLoanInterestRate;
                 case LoanType.Car:
-                    return 10.0m;
+                    return ConstantData.CarLoanInterestRate;
                 default:
-                    return 10.0m;
+                    return ConstantData.DefaultLoanInterestRate;
             }
         }
 
-        public Loan(string id, decimal principal, decimal rate, int term, LoanType loanType)
+        public Loan(LoanRequest request)
         {
-            LoanId = id;
-            PrincipalAmount = principal;
-            InterestRate = rate;
-            TermInMonths = term;
-            Type = loanType;
+            LoanId = request.LoanId;
+            PrincipalAmount = request.PrincipalAmount;
+            TermInMonths = request.TermInMonths;
+            Type = request.LoanType;
+
+            InterestRate = GetInterestRate(request.LoanType);
             DateIssued = DateTime.UtcNow;
             OutstandingBalance = CalculateTotalAmount();
         }
 
-        private decimal CalculateTotalAmount()
-        {
-            decimal monthlyRate = InterestRate / 12 / 100;
-            decimal totalAmount = PrincipalAmount * (1 + (monthlyRate * TermInMonths));
-            return totalAmount;
-        }
 
         public decimal CalculateMonthlyEMI()
         {
             if (TermInMonths == 0) return 0;
 
-            decimal monthlyRate = InterestRate / 12 / 100;
-            
+            decimal monthlyRate = CalculateMonthlyRate(InterestRate);
+
             if (monthlyRate == 0) 
                 return PrincipalAmount / TermInMonths;
 
@@ -81,5 +70,16 @@ namespace Online_Banking_System.Models
         {
             return OutstandingBalance <= 0;
         }
+        private decimal CalculateTotalAmount()
+        {
+            decimal monthlyRate = CalculateMonthlyRate(InterestRate);
+            decimal totalAmount = PrincipalAmount * (1 + (monthlyRate * TermInMonths));
+            return totalAmount;
+        }
+        private decimal CalculateMonthlyRate(decimal InterestRate)
+        {
+            return InterestRate / 12 / 100;
+        }
+
     }
 }

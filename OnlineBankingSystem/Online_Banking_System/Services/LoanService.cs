@@ -1,12 +1,16 @@
 using System;
 using Online_Banking_System.Models;
 using Online_Banking_System.Repository;
+using static Enums;
 
 namespace Online_Banking_System.Services
 {
     public class LoanService
     {
         private readonly IAccountRepository accountRepository;
+
+        private Account account = new Account();
+        private AccountService accountService = new AccountService(new AccountRepository());
 
         public LoanService(IAccountRepository repository)
         {
@@ -25,10 +29,17 @@ namespace Online_Banking_System.Services
 
             decimal fixedRate = Loan.GetInterestRate(loanType);
             string loanId = "LN" + DateTime.Now.Ticks;
-            Loan newLoan = new Loan(loanId, principal, fixedRate, term, loanType);
+            var newLoan = new Loan(new LoanRequest
+            {
+                LoanId = loanId,
+                PrincipalAmount = principal,
+                TermInMonths = term,
+                LoanType = loanType
+            });
 
-            account.AddLoan(newLoan);
-            account.Deposit(principal);
+
+            AddLoan(newLoan);
+            accountService.Deposit(principal);
             account.Transactions.Add(new Transaction(TransactionType.LoanDisbursement,
                 $"Loan Disbursement - {loanType}", principal));
 
@@ -49,7 +60,7 @@ namespace Online_Banking_System.Services
             if (paymentAmount > loan.OutstandingBalance)
                 throw new ArgumentException("Payment amount exceeds outstanding balance!");
 
-            if (!account.MakeLoanPayment(loanId, paymentAmount))
+            if (!MakeLoanPayment(loanId, paymentAmount))
                 throw new InvalidOperationException("Payment failed! Check account balance or loan details.");
 
             account.Transactions.Add(new Transaction(TransactionType.LoanPayment,
@@ -64,6 +75,42 @@ namespace Online_Banking_System.Services
                     return loan;
             }
             return null;
+        }
+
+
+        public void AddLoan(Loan loan)
+        {
+            if (loan != null)
+                account.Loans.Add(loan);
+        }
+
+        public decimal GetTotalLoanBalance()
+        {
+            decimal total = 0;
+            foreach (var loan in account.Loans)
+            {
+                total += loan.OutstandingBalance;
+            }
+            return total;
+        }
+
+        public bool MakeLoanPayment(string loanId, decimal amount)
+        {
+            foreach (var loan in account.Loans)
+            {
+                if (loan.LoanId == loanId)
+                {
+                    if (amount > account.Balance)
+                        return false;
+
+                    if (loan.MakePayment(amount))
+                    {
+                        account.Balance -= amount;
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
     }
 }

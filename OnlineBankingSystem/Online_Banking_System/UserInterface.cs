@@ -1,6 +1,7 @@
 using System;
 using Online_Banking_System.Models;
 using Online_Banking_System.Services;
+using static Enums;
 
 namespace Online_Banking_System
 {
@@ -300,7 +301,7 @@ namespace Online_Banking_System
                 if (account.Loans.Count > 0)
                 {
                     Console.WriteLine($"\nTotal Active Loans: {account.Loans.Count}");
-                    Console.WriteLine($"Total Outstanding: {account.GetTotalLoanBalance():F2}");
+                    Console.WriteLine($"Total Outstanding: {loanService.GetTotalLoanBalance():F2}");
                 }
                 else
                 {

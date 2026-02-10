@@ -1,16 +1,9 @@
 using System;
+using static Enums;
 
 namespace Online_Banking_System.Models
 {
-    public enum TransactionType
-    {
-        Deposit,
-        Withdrawal,
-        Transfer,
-        LoanDisbursement,
-        LoanPayment
-    }
-
+   
     public class Transaction
     {
         public DateTime Date { get; }
