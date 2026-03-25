@@ -1,4 +1,5 @@
 using System;
+using Online_Banking_System.Exceptions;
 using Online_Banking_System.Models;
 using Online_Banking_System.Repository;
 using static Enums;
@@ -20,10 +21,10 @@ namespace Online_Banking_System.Services
         public Loan ApplyForLoan(string accountNumber, decimal principal, int term, LoanType loanType)
         {
             if (principal <= 0)
-                throw new ArgumentException("Loan amount must be positive!");
+                throw new InvalidLoanParameterException("amount", "Loan amount must be positive!");
 
             if (term <= 0)
-                throw new ArgumentException("Loan term must be positive!");
+                throw new InvalidLoanParameterException("term", "Loan term must be positive!");
 
             Account account = accountRepository.GetAccount(accountNumber);
 
@@ -49,19 +50,19 @@ namespace Online_Banking_System.Services
         public void MakeLoanPayment(string accountNumber, string loanId, decimal paymentAmount)
         {
             if (paymentAmount <= 0)
-                throw new ArgumentException("Payment amount must be positive!");
+                throw new InvalidAmountException(paymentAmount, "Payment amount must be positive!");
 
             Account account = accountRepository.GetAccount(accountNumber);
 
             Loan loan = FindLoan(account, loanId);
             if (loan == null)
-                throw new InvalidOperationException("Loan not found!");
+                throw new LoanNotFoundException(loanId);
 
             if (paymentAmount > loan.OutstandingBalance)
-                throw new ArgumentException("Payment amount exceeds outstanding balance!");
+                throw new InvalidAmountException(paymentAmount, "Payment amount exceeds outstanding balance!");
 
             if (!MakeLoanPayment(loanId, paymentAmount))
-                throw new InvalidOperationException("Payment failed! Check account balance or loan details.");
+                throw new LoanPaymentException(loanId, "Check account balance or loan details.");
 
             account.Transactions.Add(new Transaction(TransactionType.LoanPayment,
                 $"Loan Payment - {loanId}", -paymentAmount));

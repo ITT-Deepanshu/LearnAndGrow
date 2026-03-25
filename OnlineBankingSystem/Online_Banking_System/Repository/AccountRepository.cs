@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Online_Banking_System.Exceptions;
 using Online_Banking_System.Models;
 
 namespace Online_Banking_System.Repository
@@ -11,7 +12,7 @@ namespace Online_Banking_System.Repository
         {
             if (!accounts.ContainsKey(accountNumber))
             {
-                throw new KeyNotFoundException("Account Not Found!");
+                throw new AccountNotFoundException(accountNumber);
             }
             return accounts[accountNumber];
         }

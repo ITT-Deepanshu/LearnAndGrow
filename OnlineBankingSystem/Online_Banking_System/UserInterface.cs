@@ -1,4 +1,5 @@
 using System;
+using Online_Banking_System.Exceptions;
 using Online_Banking_System.Models;
 using Online_Banking_System.Services;
 using static Enums;
@@ -85,13 +86,17 @@ namespace Online_Banking_System
                 {
                     Console.WriteLine("Invalid input! Please enter a number.");
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error: {ex.Message}");
-                }
+            catch (BankingException ex)
+            {
+                Console.WriteLine($"Banking Error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected Error: {ex.Message}");
             }
         }
 
+        private void ShowMenu()
         private void ShowMenu()
         {
             Console.WriteLine("\n===== Online Banking System =====");
@@ -150,9 +155,17 @@ namespace Online_Banking_System
                 }
                 Console.WriteLine("=====================================");
             }
-            catch (Exception ex)
+            catch (AccountNotFoundException ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (InvalidAccountDetailsException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected Error: {ex.Message}");
             }
         }
 
@@ -177,9 +190,17 @@ namespace Online_Banking_System
             {
                 Console.WriteLine("Invalid amount format!");
             }
-            catch (Exception ex)
+            catch (AccountNotFoundException ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (InvalidAmountException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected Error: {ex.Message}");
             }
         }
 
@@ -204,9 +225,21 @@ namespace Online_Banking_System
             {
                 Console.WriteLine("Invalid amount format!");
             }
-            catch (Exception ex)
+            catch (AccountNotFoundException ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (InvalidAmountException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (InsufficientBalanceException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected Error: {ex.Message}");
             }
         }
 
@@ -231,9 +264,25 @@ namespace Online_Banking_System
             {
                 Console.WriteLine("Invalid amount format!");
             }
-            catch (Exception ex)
+            catch (AccountNotFoundException ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (SameAccountTransferException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (InvalidAmountException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (InsufficientBalanceException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected Error: {ex.Message}");
             }
         }
 
@@ -251,9 +300,17 @@ namespace Online_Banking_System
                     Console.WriteLine($"{transaction.Date} UTC, {transaction.Description}, {transaction.Amount}");
                 }
             }
-            catch (Exception ex)
+            catch (AccountNotFoundException ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (InvalidAccountDetailsException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected Error: {ex.Message}");
             }
         }
 
@@ -275,9 +332,13 @@ namespace Online_Banking_System
                 Console.WriteLine($"Your Account Number: {accountNumber}");
                 Console.WriteLine($"Initial Balance: 5000.00");
             }
-            catch (Exception ex)
+            catch (InvalidAccountDetailsException ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected Error: {ex.Message}");
             }
         }
 
@@ -310,9 +371,17 @@ namespace Online_Banking_System
                 
                 Console.WriteLine("=====================================");
             }
-            catch (Exception ex)
+            catch (AccountNotFoundException ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (InvalidAccountDetailsException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected Error: {ex.Message}");
             }
         }
 
@@ -375,9 +444,17 @@ namespace Online_Banking_System
             {
                 Console.WriteLine("Invalid input format!");
             }
-            catch (Exception ex)
+            catch (AccountNotFoundException ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (InvalidLoanParameterException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected Error: {ex.Message}");
             }
         }
 
@@ -467,9 +544,25 @@ namespace Online_Banking_System
             {
                 Console.WriteLine("Invalid input format!");
             }
-            catch (Exception ex)
+            catch (AccountNotFoundException ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (LoanNotFoundException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (InvalidAmountException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (LoanPaymentException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected Error: {ex.Message}");
             }
         }
 
@@ -503,9 +596,17 @@ namespace Online_Banking_System
                     Console.WriteLine("----------------------------------");
                 }
             }
-            catch (Exception ex)
+            catch (AccountNotFoundException ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (InvalidAccountDetailsException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected Error: {ex.Message}");
             }
         }
     }

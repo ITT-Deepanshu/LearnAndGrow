@@ -1,5 +1,6 @@
 using System;
 using System.Text.RegularExpressions;
+using Online_Banking_System.Exceptions;
 using Online_Banking_System.Models;
 using Online_Banking_System.Repository;
 
@@ -19,19 +20,19 @@ namespace Online_Banking_System.Services
         public string CreateAccount(string customerName, string phoneNumber, string email)
         {
             if (string.IsNullOrWhiteSpace(customerName))
-                throw new ArgumentException("Customer name cannot be empty!");
+                throw new InvalidAccountDetailsException("Customer Name", "cannot be empty!");
 
             if (string.IsNullOrWhiteSpace(phoneNumber))
-                throw new ArgumentException("Phone number cannot be empty!");
+                throw new InvalidAccountDetailsException("Phone Number", "cannot be empty!");
 
             if (!IsValidPhoneNumber(phoneNumber))
-                throw new ArgumentException("Phone number must be 10 digits!");
+                throw new InvalidAccountDetailsException("Phone Number", "must be 10 digits!");
 
             if (string.IsNullOrWhiteSpace(email))
-                throw new ArgumentException("Email cannot be empty!");
+                throw new InvalidAccountDetailsException("Email", "cannot be empty!");
 
             if (!IsValidEmail(email))
-                throw new ArgumentException("Invalid email format!");
+                throw new InvalidAccountDetailsException("Email", "invalid format!");
 
             string accountNumber = GenerateAccountNumber();
 
@@ -89,10 +90,10 @@ namespace Online_Banking_System.Services
         public Account GetAccount(string accountNumber)
         {
             if (string.IsNullOrWhiteSpace(accountNumber))
-                throw new ArgumentException("Account number cannot be empty!");
+                throw new InvalidAccountDetailsException("Account Number", "cannot be empty!");
 
             if (!IsValidAccountNumber(accountNumber))
-                throw new ArgumentException("Account number must be 15 digits!");
+                throw new InvalidAccountDetailsException("Account Number", "must be 15 digits!");
 
             return accountRepository.GetAccount(accountNumber);
         }

@@ -1,4 +1,5 @@
 using System;
+using Online_Banking_System.Exceptions;
 using static Enums;
 
 namespace Online_Banking_System.Models
@@ -59,8 +60,11 @@ namespace Online_Banking_System.Models
 
         public bool MakePayment(decimal amount)
         {
-            if (amount <= 0 || amount > OutstandingBalance)
-                return false;
+            if (amount <= 0)
+                throw new InvalidAmountException(amount, "Payment amount must be positive!");
+
+            if (amount > OutstandingBalance)
+                throw new InvalidAmountException(amount, "Payment amount exceeds outstanding balance!");
 
             OutstandingBalance -= amount;
             return true;
