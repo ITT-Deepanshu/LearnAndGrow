@@ -1,14 +1,15 @@
-﻿using FinanceTracker.ConsoleClient.DTOs;
+using FinanceTracker.ConsoleClient.DTOs;
+using FinanceTracker.ConsoleClient.Interfaces;
 using FinanceTracker.ConsoleClient.Services;
 
 namespace FinanceTracker.ConsoleClient.UI
 {
     public class TransactionScreen
     {
-        private readonly ApiService _api;
+        private readonly IApiService _api;
         private readonly UserSession _session;
 
-        public TransactionScreen(ApiService api, UserSession session)
+        public TransactionScreen(IApiService api, UserSession session)
         {
             _api = api;
             _session = session;
@@ -16,7 +17,7 @@ namespace FinanceTracker.ConsoleClient.UI
 
         public async Task Show()
         {
-            Console.WriteLine("1. Add 2. View 3. Delete");
+            Console.WriteLine("\n1. Add\n2. View\n3. Delete");
             var input = Console.ReadLine();
 
             if (input == "1")
@@ -24,23 +25,24 @@ namespace FinanceTracker.ConsoleClient.UI
                 var dto = new TransactionRequestDto();
 
                 Console.Write("Type (Income/Expense): ");
-                dto.Type = Console.ReadLine();
+                dto.Type = Console.ReadLine() ?? string.Empty;
 
                 Console.Write("Amount: ");
-                dto.Amount = decimal.Parse(Console.ReadLine());
+                if (!decimal.TryParse(Console.ReadLine(), out var amount))
+                {
+                    Console.WriteLine("Invalid amount. Transaction cancelled.");
+                    return;
+                }
+                dto.Amount = amount;
 
                 Console.Write("Category: ");
-                dto.Category = Console.ReadLine();
+                dto.Category = Console.ReadLine() ?? string.Empty;
 
-                await _api.PostAsync("transactions", new
-                {
-                    userId = _session.UserId,
-                    type = dto.Type,
-                    amount = dto.Amount,
-                    category = dto.Category
-                });
+                dto.UserId = _session.UserId;
 
-                Console.WriteLine("Transaction Added");
+                await _api.PostAsync("transactions", dto);
+
+                Console.WriteLine("Transaction Added.");
             }
             else if (input == "2")
             {
@@ -57,17 +59,27 @@ namespace FinanceTracker.ConsoleClient.UI
 
                 foreach (var t in transactions)
                 {
-                    Console.WriteLine($"{t.TypeName,-10}{t.Amount,10:F2}  {t.Category,-15}{t.Date:yyyy-MM-dd HH:mm,-22}{t.Id}");
+                    Console.WriteLine($"{t.TypeName,-10}{t.Amount,10:F2}  {t.Category,-15}{t.Date,-22:yyyy-MM-dd HH:mm}{t.Id}");
                 }
             }
             else if (input == "3")
             {
-                Console.Write("Enter Id: ");
-                var id = Console.ReadLine();
+                Console.Write("Enter Transaction Id: ");
+                var rawId = Console.ReadLine();
+
+                if (!Guid.TryParse(rawId, out var id))
+                {
+                    Console.WriteLine("Invalid Id format. Please copy the Id from the transaction list.");
+                    return;
+                }
 
                 await _api.DeleteAsync($"transactions/{id}");
 
-                Console.WriteLine("Deleted");
+                Console.WriteLine("Transaction deleted.");
+            }
+            else
+            {
+                Console.WriteLine("Invalid option.");
             }
         }
     }

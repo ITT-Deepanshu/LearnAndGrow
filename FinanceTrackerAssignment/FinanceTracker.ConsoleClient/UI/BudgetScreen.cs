@@ -1,14 +1,15 @@
-﻿using FinanceTracker.ConsoleClient.DTOs;
+using FinanceTracker.ConsoleClient.DTOs;
+using FinanceTracker.ConsoleClient.Interfaces;
 using FinanceTracker.ConsoleClient.Services;
 
 namespace FinanceTracker.ConsoleClient.UI
 {
     public class BudgetScreen
     {
-        private readonly ApiService _api;
+        private readonly IApiService _api;
         private readonly UserSession _session;
 
-        public BudgetScreen(ApiService api, UserSession session)
+        public BudgetScreen(IApiService api, UserSession session)
         {
             _api = api;
             _session = session;
@@ -16,7 +17,7 @@ namespace FinanceTracker.ConsoleClient.UI
 
         public async Task Show()
         {
-            Console.WriteLine("1. Set Budget 2. View Budgets");
+            Console.WriteLine("\n1. Set Budget\n2. View Budgets");
             var input = Console.ReadLine();
 
             if (input == "1")
@@ -25,14 +26,19 @@ namespace FinanceTracker.ConsoleClient.UI
                 dto.UserId = _session.UserId;
 
                 Console.Write("Category: ");
-                dto.Category = Console.ReadLine();
+                dto.Category = Console.ReadLine() ?? string.Empty;
 
                 Console.Write("Limit: ");
-                dto.Limit = decimal.Parse(Console.ReadLine());
+                if (!decimal.TryParse(Console.ReadLine(), out var limit))
+                {
+                    Console.WriteLine("Invalid limit amount. Budget not saved.");
+                    return;
+                }
+                dto.Limit = limit;
 
                 await _api.PostAsync("budgets", dto);
 
-                Console.WriteLine("Budget Set");
+                Console.WriteLine("Budget set.");
             }
             else if (input == "2")
             {
@@ -44,10 +50,16 @@ namespace FinanceTracker.ConsoleClient.UI
                     return;
                 }
 
+                Console.WriteLine($"\n{"Category",-20}{"Limit",10}");
+                Console.WriteLine(new string('-', 32));
                 foreach (var b in data)
                 {
-                    Console.WriteLine($"Category: {b.Category}, Limit: {b.Limit}");
+                    Console.WriteLine($"{b.Category,-20}{b.Limit,10:F2}");
                 }
+            }
+            else
+            {
+                Console.WriteLine("Invalid option.");
             }
         }
     }

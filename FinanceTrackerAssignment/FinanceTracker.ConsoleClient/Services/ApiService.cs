@@ -1,19 +1,26 @@
-﻿using System.Text;
+using System.Text;
 using System.Text.Json;
 using FinanceTracker.ConsoleClient.Common;
 using FinanceTracker.ConsoleClient.Exceptions;
+using FinanceTracker.ConsoleClient.Interfaces;
+using Microsoft.Extensions.Configuration;
 
 namespace FinanceTracker.ConsoleClient.Services
 {
-    public class ApiService
+    public class ApiService : IApiService
     {
         private readonly HttpClient _client;
+        private static readonly JsonSerializerOptions _jsonOptions =
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
-        public ApiService()
+        public ApiService(IConfiguration config)
         {
+            var baseUrl = config["ApiSettings:BaseUrl"]
+                ?? throw new InvalidOperationException("ApiSettings:BaseUrl is not configured in appsettings.json.");
+
             _client = new HttpClient
             {
-                BaseAddress = new Uri("https://localhost:7102/")
+                BaseAddress = new Uri(baseUrl)
             };
         }
 
@@ -22,8 +29,7 @@ namespace FinanceTracker.ConsoleClient.Services
             var response = await _client.GetAsync(url);
             var json = await response.Content.ReadAsStringAsync();
 
-            var result = JsonSerializer.Deserialize<ApiResponse<T>>(json,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var result = JsonSerializer.Deserialize<ApiResponse<T>>(json, _jsonOptions);
 
             if (result == null || !result.Success)
                 throw new ApiException(result?.Message ?? "API Error");
@@ -40,8 +46,7 @@ namespace FinanceTracker.ConsoleClient.Services
 
             var resultJson = await response.Content.ReadAsStringAsync();
 
-            var result = JsonSerializer.Deserialize<ApiResponse<string>>(resultJson,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var result = JsonSerializer.Deserialize<ApiResponse<string>>(resultJson, _jsonOptions);
 
             if (result == null || !result.Success)
                 throw new ApiException(result?.Message ?? "API Error");
@@ -53,8 +58,7 @@ namespace FinanceTracker.ConsoleClient.Services
 
             var json = await response.Content.ReadAsStringAsync();
 
-            var result = JsonSerializer.Deserialize<ApiResponse<string>>(json,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var result = JsonSerializer.Deserialize<ApiResponse<string>>(json, _jsonOptions);
 
             if (result == null || !result.Success)
                 throw new ApiException(result?.Message ?? "API Error");
