@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36401.2 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DivisorPairs", "DivisorPairs\DivisorPairs.csproj", "{53272B5E-9141-4F9D-B466-FE811796060D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DivisorPairs.Tests", "DivisorPairs.Tests\DivisorPairs.Tests.csproj", "{6E34A57B-ADD5-4CBE-9363-31D8877EDD20}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{53272B5E-9141-4F9D-B466-FE811796060D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{53272B5E-9141-4F9D-B466-FE811796060D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{53272B5E-9141-4F9D-B466-FE811796060D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{53272B5E-9141-4F9D-B466-FE811796060D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E34A57B-ADD5-4CBE-9363-31D8877EDD20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E34A57B-ADD5-4CBE-9363-31D8877EDD20}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E34A57B-ADD5-4CBE-9363-31D8877EDD20}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E34A57B-ADD5-4CBE-9363-31D8877EDD20}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1FEB5F5B-2E29-44AA-82C9-5591C27DB4FC}
+	EndGlobalSection
+EndGlobal
