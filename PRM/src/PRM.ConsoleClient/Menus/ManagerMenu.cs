@@ -1,0 +1,48 @@
+using PRM.ConsoleClient.Services;
+using PRM.ConsoleClient.Views.Manager;
+
+namespace PRM.ConsoleClient.Menus;
+
+public sealed class ManagerMenu(
+    ConsoleUi ui,
+    SessionContext session,
+    ResourceDashboardView resourceDashboard,
+    AllocateResourceView allocateResource,
+    MyProjectsView myProjects,
+    TeamTimesheetsView teamTimesheets,
+    AiAssistantView aiAssistant,
+    ApiClient api)
+{
+    public async Task RunAsync(CancellationToken ct = default)
+    {
+        while (true)
+        {
+            ui.ClearScreen();
+            ui.DrawBox($"Welcome, {session.FullName}!  |  {ui.FormatNow()}");
+
+            Console.WriteLine("1. Resource Dashboard");
+            Console.WriteLine("2. Allocate Resource");
+            Console.WriteLine("3. My Projects");
+            Console.WriteLine("4. Timesheets");
+            Console.WriteLine("5. AI Assistant");
+            Console.WriteLine("6. Logout");
+            Console.WriteLine();
+
+            switch (ui.Prompt("Enter option"))
+            {
+                case "1": await resourceDashboard.RunAsync(ct); break;
+                case "2": await allocateResource.RunAsync(ct); break;
+                case "3": await myProjects.RunAsync(ct); break;
+                case "4": await teamTimesheets.RunAsync(ct); break;
+                case "5": await aiAssistant.RunAsync(ct); break;
+                case "6":
+                    await api.LogoutAsync(ct);
+                    return;
+                default:
+                    ui.WriteError("Invalid option.");
+                    ui.Pause();
+                    break;
+            }
+        }
+    }
+}
