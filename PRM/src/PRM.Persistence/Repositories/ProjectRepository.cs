@@ -21,7 +21,7 @@ public class ProjectRepository(PrmDbContext context) : IProjectRepository
 
     public async Task<IReadOnlyList<Project>> ListAsync(long? managerId, CancellationToken cancellationToken = default)
     {
-        var query = context.Projects.AsQueryable();
+        var query = context.Projects.Include(p => p.Manager).AsQueryable();
         if (managerId.HasValue)
             query = query.Where(p => p.ManagerId == managerId.Value);
         return await query.OrderBy(p => p.Id).ToListAsync(cancellationToken);
