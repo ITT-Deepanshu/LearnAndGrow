@@ -28,7 +28,8 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
         builder.HasKey(x => x.Id);
         builder.Property(x => x.TokenHash).HasMaxLength(128).IsRequired();
         builder.HasIndex(x => x.TokenHash).IsUnique();
-        builder.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId);
+        builder.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
 
@@ -42,10 +43,14 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.Property(x => x.Department).HasMaxLength(64).IsRequired();
         builder.Property(x => x.Designation).HasMaxLength(64).IsRequired();
         builder.Property(x => x.RowVersion).IsRowVersion();
-        builder.HasOne(x => x.User).WithOne(x => x.EmployeeProfile).HasForeignKey<Employee>(x => x.UserId);
-        builder.HasOne(x => x.Manager).WithMany().HasForeignKey(x => x.ManagerId).IsRequired(false);
-        builder.HasMany(x => x.Skills).WithOne(x => x.Employee).HasForeignKey(x => x.EmployeeId);
-        builder.HasMany(x => x.Allocations).WithOne(x => x.Employee).HasForeignKey(x => x.EmployeeId);
+        builder.HasOne(x => x.User).WithOne(x => x.EmployeeProfile).HasForeignKey<Employee>(x => x.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(x => x.Manager).WithMany().HasForeignKey(x => x.ManagerId).IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasMany(x => x.Skills).WithOne(x => x.Employee).HasForeignKey(x => x.EmployeeId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasMany(x => x.Allocations).WithOne(x => x.Employee).HasForeignKey(x => x.EmployeeId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
 
@@ -72,9 +77,12 @@ public class ProjectConfiguration : IEntityTypeConfiguration<Project>
         builder.Property(x => x.Description).HasMaxLength(512);
         builder.Property(x => x.HealthReason).HasMaxLength(1024);
         builder.Property(x => x.RowVersion).IsRowVersion();
-        builder.HasOne(x => x.Manager).WithMany().HasForeignKey(x => x.ManagerId);
-        builder.HasMany(x => x.Milestones).WithOne(x => x.Project).HasForeignKey(x => x.ProjectId);
-        builder.HasMany(x => x.Allocations).WithOne(x => x.Project).HasForeignKey(x => x.ProjectId);
+        builder.HasOne(x => x.Manager).WithMany().HasForeignKey(x => x.ManagerId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasMany(x => x.Milestones).WithOne(x => x.Project).HasForeignKey(x => x.ProjectId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasMany(x => x.Allocations).WithOne(x => x.Project).HasForeignKey(x => x.ProjectId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
 
@@ -109,7 +117,8 @@ public class TimesheetConfiguration : IEntityTypeConfiguration<Timesheet>
         builder.HasIndex(x => new { x.EmployeeId, x.WeekStart }).IsUnique();
         builder.Property(x => x.TotalHours).HasPrecision(6, 2);
         builder.Property(x => x.RowVersion).IsRowVersion();
-        builder.HasMany(x => x.Entries).WithOne(x => x.Timesheet).HasForeignKey(x => x.TimesheetId);
+        builder.HasMany(x => x.Entries).WithOne(x => x.Timesheet).HasForeignKey(x => x.TimesheetId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
 
@@ -121,7 +130,8 @@ public class TimesheetEntryConfiguration : IEntityTypeConfiguration<TimesheetEnt
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Hours).HasPrecision(6, 2);
         builder.Property(x => x.RowVersion).IsRowVersion();
-        builder.HasOne(x => x.Project).WithMany().HasForeignKey(x => x.ProjectId);
+        builder.HasOne(x => x.Project).WithMany().HasForeignKey(x => x.ProjectId)
+            .OnDelete(DeleteBehavior.Restrict);
         builder.HasMany(x => x.ActivityTags).WithMany();
     }
 }
@@ -132,6 +142,7 @@ public class ActivityTagConfiguration : IEntityTypeConfiguration<ActivityTag>
     {
         builder.ToTable("activity_tags");
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.Name).HasMaxLength(128).IsRequired();
     }
 }

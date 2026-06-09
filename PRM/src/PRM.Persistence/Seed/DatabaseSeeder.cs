@@ -10,7 +10,8 @@ public static class DatabaseSeeder
 {
     public static async Task SeedAsync(PrmDbContext context, IPasswordHasher passwordHasher, CancellationToken cancellationToken = default)
     {
-        if (await context.Users.AnyAsync(cancellationToken))
+        if (await context.Users.AnyAsync(cancellationToken)
+            || await context.ActivityTags.AnyAsync(cancellationToken))
             return;
 
         var utcNow = DateTime.UtcNow;

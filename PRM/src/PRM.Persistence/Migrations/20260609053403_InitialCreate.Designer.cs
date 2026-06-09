@@ -43,10 +43,7 @@ namespace PRM.Persistence.Migrations
             modelBuilder.Entity("PRM.Domain.Entities.ActivityTag", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<bool>("IsCustom")
                         .HasColumnType("bit");
@@ -651,7 +648,7 @@ namespace PRM.Persistence.Migrations
                     b.HasOne("PRM.Domain.Entities.Project", "Project")
                         .WithMany("Allocations")
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Employee");
@@ -663,7 +660,8 @@ namespace PRM.Persistence.Migrations
                 {
                     b.HasOne("PRM.Domain.Entities.User", "Manager")
                         .WithMany()
-                        .HasForeignKey("ManagerId");
+                        .HasForeignKey("ManagerId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PRM.Domain.Entities.User", "User")
                         .WithOne("EmployeeProfile")
@@ -692,7 +690,7 @@ namespace PRM.Persistence.Migrations
                     b.HasOne("PRM.Domain.Entities.User", "Manager")
                         .WithMany()
                         .HasForeignKey("ManagerId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Manager");
@@ -736,7 +734,7 @@ namespace PRM.Persistence.Migrations
                     b.HasOne("PRM.Domain.Entities.Project", "Project")
                         .WithMany()
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("PRM.Domain.Entities.Timesheet", "Timesheet")

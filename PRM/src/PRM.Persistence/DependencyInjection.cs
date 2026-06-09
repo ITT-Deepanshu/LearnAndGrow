@@ -10,9 +10,22 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddPersistence(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddDbContext<PrmDbContext>(options =>
+        services.AddPrmDbContext(options =>
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
+        return services.AddPrmRepositories();
+    }
+
+    public static IServiceCollection AddPrmDbContext(
+        this IServiceCollection services,
+        Action<DbContextOptionsBuilder> configure)
+    {
+        services.AddDbContext<PrmDbContext>(configure);
+        return services;
+    }
+
+    public static IServiceCollection AddPrmRepositories(this IServiceCollection services)
+    {
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IEmployeeRepository, EmployeeRepository>();
