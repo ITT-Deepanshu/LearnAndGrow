@@ -15,6 +15,8 @@ public class AllocationRepository(PrmDbContext context) : IAllocationRepository
     public async Task<IReadOnlyList<Allocation>> ListActiveForEmployeeAsync(
         long employeeId, DateOnly from, DateOnly to, CancellationToken cancellationToken = default) =>
         await context.Allocations
+            .Include(a => a.Employee).ThenInclude(e => e.User)
+            .Include(a => a.Project)
             .Where(a => a.EmployeeId == employeeId
                         && a.EndedAt == null
                         && a.FromDate <= to
@@ -24,6 +26,7 @@ public class AllocationRepository(PrmDbContext context) : IAllocationRepository
     public async Task<IReadOnlyList<Allocation>> ListActiveOnProjectAsync(long projectId, CancellationToken cancellationToken = default) =>
         await context.Allocations
             .Include(a => a.Employee).ThenInclude(e => e.User)
+            .Include(a => a.Project)
             .Where(a => a.ProjectId == projectId && a.EndedAt == null)
             .ToListAsync(cancellationToken);
 
