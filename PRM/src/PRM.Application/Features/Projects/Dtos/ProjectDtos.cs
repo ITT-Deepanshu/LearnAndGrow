@@ -74,3 +74,9 @@ public sealed record AllocationSummaryDto(
     decimal UtilisationPercentage,
     DateOnly FromDate,
     DateOnly ToDate);
+
+public sealed record ProjectHealthDto(
+    long ProjectId,
+    string Status,
+    string DisplayLabel,
+    IReadOnlyList<string> RiskFlags);

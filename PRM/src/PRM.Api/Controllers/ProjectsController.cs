@@ -71,6 +71,11 @@ public sealed class ProjectsController(IMediator mediator) : ControllerBase
     public async Task<ActionResult<IReadOnlyList<MilestoneDto>>> ListMilestones(long id, CancellationToken cancellationToken) =>
         Ok(await mediator.Send(new ListMilestonesQuery(id), cancellationToken));
 
+    [HttpGet("{id:long}/health")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<ActionResult<ProjectHealthDto>> GetHealth(long id, CancellationToken cancellationToken) =>
+        Ok(await mediator.Send(new GetProjectHealthQuery(id), cancellationToken));
+
     [HttpPut("{id:long}/milestones/{milestoneId:long}/status")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateMilestoneStatus(
