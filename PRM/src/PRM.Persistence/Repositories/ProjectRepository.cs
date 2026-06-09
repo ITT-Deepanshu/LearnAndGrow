@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PRM.Application.Interfaces.Persistence;
 using PRM.Domain.Entities;
+using PRM.Domain.Enums;
 
 namespace PRM.Persistence.Repositories;
 
@@ -26,6 +27,14 @@ public class ProjectRepository(PrmDbContext context) : IProjectRepository
             query = query.Where(p => p.ManagerId == managerId.Value);
         return await query.OrderBy(p => p.Id).ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<Project>> ListActiveWithDetailsAsync(CancellationToken cancellationToken = default) =>
+        await context.Projects
+            .Include(p => p.Milestones)
+            .Include(p => p.Allocations).ThenInclude(a => a.Employee).ThenInclude(e => e.User)
+            .Where(p => p.IsActive && p.Status == ProjectStatus.Active)
+            .OrderBy(p => p.Id)
+            .ToListAsync(cancellationToken);
 
     public void Add(Project project) => context.Projects.Add(project);
 }

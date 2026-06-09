@@ -22,4 +22,14 @@ public class RefreshTokenRepository(PrmDbContext context) : IRefreshTokenReposit
         foreach (var token in tokens)
             token.Revoke(utcNow);
     }
+
+    public async Task<int> PruneExpiredAsync(DateTime cutoffUtc, CancellationToken cancellationToken = default)
+    {
+        var tokens = await context.RefreshTokens
+            .Where(t => t.IsRevoked && t.ExpiresAt < cutoffUtc)
+            .ToListAsync(cancellationToken);
+
+        context.RefreshTokens.RemoveRange(tokens);
+        return tokens.Count;
+    }
 }

@@ -8,4 +8,5 @@ public interface IRefreshTokenRepository
     Task<IReadOnlyList<RefreshToken>> ListActiveForUserAsync(long userId, CancellationToken cancellationToken = default);
     void Add(RefreshToken token);
     void RevokeAllForUser(long userId, DateTime utcNow);
+    Task<int> PruneExpiredAsync(DateTime cutoffUtc, CancellationToken cancellationToken = default);
 }

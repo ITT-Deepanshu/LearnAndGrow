@@ -26,5 +26,17 @@ public class TimesheetRepository(PrmDbContext context) : ITimesheetRepository
             .Where(t => employeeIds.Contains(t.EmployeeId) && t.WeekStart == weekStart)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<string>> GetRecentActivityTagsForEmployeeAsync(
+        long employeeId,
+        DateOnly sinceWeekStart,
+        CancellationToken cancellationToken = default) =>
+        await context.TimesheetEntries
+            .Where(e => e.Timesheet.EmployeeId == employeeId && e.Timesheet.WeekStart >= sinceWeekStart)
+            .SelectMany(e => e.ActivityTags.Select(t => t.Name))
+            .Distinct()
+            .OrderBy(name => name)
+            .Take(10)
+            .ToListAsync(cancellationToken);
+
     public void Add(Timesheet timesheet) => context.Timesheets.Add(timesheet);
 }
