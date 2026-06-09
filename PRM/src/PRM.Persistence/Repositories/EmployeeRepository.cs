@@ -10,12 +10,14 @@ public class EmployeeRepository(PrmDbContext context) : IEmployeeRepository
     public async Task<Employee?> GetByIdAsync(long id, CancellationToken cancellationToken = default) =>
         await context.Employees
             .Include(e => e.User)
+            .Include(e => e.Manager)
             .Include(e => e.Allocations)
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
 
     public async Task<Employee?> GetByIdWithSkillsAsync(long id, CancellationToken cancellationToken = default) =>
         await context.Employees
             .Include(e => e.User)
+            .Include(e => e.Manager)
             .Include(e => e.Skills)
             .Include(e => e.Allocations)
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
@@ -33,6 +35,7 @@ public class EmployeeRepository(PrmDbContext context) : IEmployeeRepository
     {
         var query = context.Employees
             .Include(e => e.User)
+            .Include(e => e.Manager)
             .Include(e => e.Skills)
             .Include(e => e.Allocations)
             .AsQueryable();
