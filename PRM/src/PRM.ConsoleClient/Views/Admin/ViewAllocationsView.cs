@@ -1,8 +1,9 @@
+using PRM.ConsoleClient.Api;
 using PRM.ConsoleClient.Services;
 
 namespace PRM.ConsoleClient.Views.Admin;
 
-public sealed class ViewAllocationsView(ApiClient api, ConsoleUi ui)
+public sealed class ViewAllocationsView(AllocationsApi allocations, ConsoleUi ui)
 {
     public async Task RunAsync(CancellationToken ct = default)
     {
@@ -16,10 +17,10 @@ public sealed class ViewAllocationsView(ApiClient api, ConsoleUi ui)
 
             try
             {
-                var allocations = await api.ListAllocationsAsync(employeeFilter, projectFilter, ct);
+                var allocationList = await allocations.ListAsync(employeeFilter, projectFilter, ct);
                 ui.PrintTable(
-                    ["Employee", "Project", "%", "From", "To"],
-                    allocations.Select(a => new List<string>
+                    ["resource", "Project", "%", "From", "To"],
+                    allocationList.Select(a => new List<string>
                     {
                         a.EmployeeName,
                         a.ProjectName,
@@ -29,7 +30,7 @@ public sealed class ViewAllocationsView(ApiClient api, ConsoleUi ui)
                     }));
 
                 Console.WriteLine();
-                Console.WriteLine($"Total Active Allocations: {allocations.Count}");
+                Console.WriteLine($"Total Active Allocations: {allocationList.Count}");
                 ui.DrawDivider();
                 Console.WriteLine("[F] Filter by Employee / Project     [B] Back");
                 var action = ui.Prompt("Action").ToUpperInvariant();

@@ -1,33 +1,32 @@
 using FluentAssertions;
 using FluentValidation.TestHelper;
-using PRM.Application.Features.Auth.Commands;
-using PRM.Application.Features.Auth.Validators;
+using PRM.Application.Auth;
 
 namespace PRM.UnitTests.Application.Auth;
 
 public class AuthValidatorTests
 {
     [Fact]
-    public void LoginCommandValidator_RejectsEmptyUsername()
+    public void LoginDtoValidator_RejectsEmptyUsername()
     {
-        var validator = new LoginCommandValidator();
-        var result = validator.TestValidate(new LoginCommand("", "password"));
+        var validator = new LoginDtoValidator();
+        var result = validator.TestValidate(new LoginDto("", "password"));
         result.ShouldHaveValidationErrorFor(x => x.Username);
     }
 
     [Fact]
-    public void ChangePasswordCommandValidator_RejectsWeakPassword()
+    public void ChangePasswordDtoValidator_RejectsWeakPassword()
     {
-        var validator = new ChangePasswordCommandValidator();
-        var result = validator.TestValidate(new ChangePasswordCommand("old", "weak", "weakpass"));
+        var validator = new ChangePasswordDtoValidator();
+        var result = validator.TestValidate(new ChangePasswordDto("old", "weak", "weakpass"));
         result.ShouldHaveValidationErrorFor(x => x.NewPassword);
     }
 
     [Fact]
-    public void ChangePasswordCommandValidator_AcceptsStrongPassword()
+    public void ChangePasswordDtoValidator_AcceptsStrongPassword()
     {
-        var validator = new ChangePasswordCommandValidator();
-        var result = validator.TestValidate(new ChangePasswordCommand("old", "StrongPass1", "StrongPass1"));
+        var validator = new ChangePasswordDtoValidator();
+        var result = validator.TestValidate(new ChangePasswordDto("old", "StrongPass1", "StrongPass1"));
         result.ShouldNotHaveAnyValidationErrors();
     }
 

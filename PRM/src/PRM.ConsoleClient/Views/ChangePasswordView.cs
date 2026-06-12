@@ -1,20 +1,21 @@
+using PRM.ConsoleClient.Api;
 using PRM.ConsoleClient.Services;
 
 namespace PRM.ConsoleClient.Views;
 
-public sealed class ChangePasswordView(ApiClient api, ConsoleUi ui, SessionContext session)
+public sealed class ChangePasswordView(AuthApi auth, ConsoleUi ui, SessionContext session)
 {
-    public async Task RunAsync(CancellationToken ct = default)
+    public async Task<string?> RunAsync(CancellationToken ct = default)
     {
-        while (session.ForcePasswordChange)
+        while (session.RequiresPasswordChange)
         {
             ui.ClearScreen();
             ui.DrawBox(
                 "CHANGE PASSWORD",
                 "You must set a new password to continue.");
 
-            var newPassword = ui.Prompt("New Password", secret: true);
-            var confirmPassword = ui.Prompt("Confirm Password", secret: true);
+            var newPassword = ui.PromptPassword("New Password");
+            var confirmPassword = ui.PromptConfirmPassword(newPassword);
             ui.DrawDivider();
             Console.WriteLine("[S] Save and Continue");
             Console.WriteLine();
@@ -25,11 +26,11 @@ public sealed class ChangePasswordView(ApiClient api, ConsoleUi ui, SessionConte
 
             try
             {
-                await api.ChangePasswordAsync(string.Empty, newPassword, confirmPassword, ct);
-                session.ForcePasswordChange = false;
+                await auth.ChangePasswordAsync(string.Empty, newPassword, confirmPassword, ct);
+                await auth.GetMeAsync(ct);
                 ui.WriteSuccess("Password updated. Welcome!");
                 ui.Pause();
-                return;
+                return newPassword;
             }
             catch (ApiException ex)
             {
@@ -37,5 +38,7 @@ public sealed class ChangePasswordView(ApiClient api, ConsoleUi ui, SessionConte
                 ui.Pause();
             }
         }
+
+        return null;
     }
 }

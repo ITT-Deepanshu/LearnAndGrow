@@ -7,7 +7,7 @@ public class SystemConfiguration : AuditableEntity
 {
     private SystemConfiguration() { }
 
-    public AiProviderType LlmProvider { get; private set; } = AiProviderType.Gemini;
+    public AiProviderType LlmProvider { get; private set; } = AiProviderType.Gemma;
     public string LlmApiKeyEncrypted { get; private set; } = string.Empty;
     public int SchedulerIntervalMinutes { get; private set; } = 240;
     public int MaxWeeklyHours { get; private set; } = 40;

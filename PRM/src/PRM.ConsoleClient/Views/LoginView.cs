@@ -1,8 +1,9 @@
+using PRM.ConsoleClient.Api;
 using PRM.ConsoleClient.Services;
 
 namespace PRM.ConsoleClient.Views;
 
-public sealed class LoginView(ApiClient api, ConsoleUi ui, SessionContext session)
+public sealed class LoginView(AuthApi auth, ChangePasswordView changePassword, ConsoleUi ui, SessionContext session)
 {
     public async Task<bool> RunAsync(CancellationToken ct = default)
     {
@@ -39,21 +40,24 @@ public sealed class LoginView(ApiClient api, ConsoleUi ui, SessionContext sessio
         ui.ClearScreen();
         ui.DrawBox("LOGIN");
 
-        var username = ui.Prompt("Username");
-        var password = ui.Prompt("Password", secret: true);
+        var username = ui.PromptRequired("Username", minLength: 1, maxLength: 64);
+        var password = ui.PromptRequired("Password", minLength: 1, maxLength: 128, secret: true);
 
         try
         {
-            var result = await api.LoginAsync(username, password, ct);
-            var me = await api.GetMeAsync(ct);
-            session.UserId = me.Id;
-            session.ForcePasswordChange = result.ForcePasswordChange || me.ForcePasswordChange;
+            var result = await auth.LoginAsync(username, password, ct);
+            session.RequiresPasswordChange = result.RequiresPasswordChange;
 
-            if (session.ForcePasswordChange)
+            if (session.RequiresPasswordChange)
             {
-                var changePassword = new ChangePasswordView(api, ui, session);
-                await changePassword.RunAsync(ct);
+                var newPassword = await changePassword.RunAsync(ct);
+                if (string.IsNullOrEmpty(newPassword))
+                    return false;
+
+                // ChangePassword already returns a fresh JWT; no second login needed.
             }
+
+            await auth.GetMeAsync(ct);
 
             ui.WriteSuccess($"Welcome, {session.FullName}!");
             ui.Pause();
@@ -62,6 +66,18 @@ public sealed class LoginView(ApiClient api, ConsoleUi ui, SessionContext sessio
         catch (ApiException ex)
         {
             ui.WriteError(ex.Message);
+            ui.Pause();
+            return false;
+        }
+        catch (HttpRequestException)
+        {
+            ui.WriteError("Unable to reach the API. Make sure the server is running.");
+            ui.Pause();
+            return false;
+        }
+        catch (Exception)
+        {
+            ui.WriteError("Login failed. Please check your username and password.");
             ui.Pause();
             return false;
         }

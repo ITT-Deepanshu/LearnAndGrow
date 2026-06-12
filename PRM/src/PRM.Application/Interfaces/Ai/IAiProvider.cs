@@ -2,8 +2,8 @@ namespace PRM.Application.Interfaces.Ai;
 
 public interface IAiProvider
 {
-    string ProviderName { get; }
     Task<SkillMatchAiResponse> MatchSkillsAsync(SkillMatchAiRequest request, CancellationToken cancellationToken = default);
+    Task<TeamSkillMatchAiResponse> MatchTeamAsync(TeamSkillMatchAiRequest request, CancellationToken cancellationToken = default);
     Task<RiskSummaryAiResponse> SummarizeRiskAsync(RiskSummaryAiRequest request, CancellationToken cancellationToken = default);
 }
 
@@ -13,7 +13,7 @@ public sealed record SkillMatchAiRequest(
     IReadOnlyList<CandidateAiContext> Candidates);
 
 public sealed record CandidateAiContext(
-    long EmployeeId,
+    long ResourceProfileId,
     string Name,
     string Department,
     IReadOnlyList<string> Skills,
@@ -24,10 +24,44 @@ public sealed record CandidateAiContext(
 public sealed record SkillMatchAiResponse(IReadOnlyList<RankedCandidateAiResult> Candidates);
 
 public sealed record RankedCandidateAiResult(
-    long EmployeeId,
+    long ResourceProfileId,
     string Name,
     string Reason,
     decimal? SuggestedUtilisation);
+
+public sealed record TeamSkillMatchAiRequest(
+    string RequirementText,
+    IReadOnlyList<BenchEmployeeAiContext> BenchEmployees);
+
+public sealed record BenchEmployeeAiContext(
+    long ResourceProfileId,
+    string Name,
+    string ManagerName,
+    IReadOnlyList<string> Skills);
+
+public sealed record TeamSkillMatchAiResponse(
+    IReadOnlyList<TeamRoleDefinitionAiResult> TeamDefined,
+    IReadOnlyList<TeamAssignmentAiResult> Assignments,
+    IReadOnlyList<UnfilledRoleAiResult> Unfilled);
+
+public sealed record TeamRoleDefinitionAiResult(
+    string RoleTitle,
+    int Count,
+    IReadOnlyList<RequiredSkillAiResult> RequiredSkills);
+
+public sealed record RequiredSkillAiResult(string Name, string MinProficiency);
+
+public sealed record TeamAssignmentAiResult(
+    string RoleTitle,
+    int SlotNumber,
+    long ResourceProfileId,
+    string Why);
+
+public sealed record UnfilledRoleAiResult(
+    string RoleTitle,
+    int UnfilledCount,
+    string Reason,
+    string Detail);
 
 public sealed record RiskSummaryAiRequest(
     string ProjectName,

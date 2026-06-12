@@ -9,4 +9,5 @@ public interface ITimesheetRepository
     Task<IReadOnlyList<Timesheet>> ListForTeamWeekAsync(IReadOnlyList<long> employeeIds, DateOnly weekStart, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<string>> GetRecentActivityTagsForEmployeeAsync(long employeeId, DateOnly sinceWeekStart, CancellationToken cancellationToken = default);
     void Add(Timesheet timesheet);
+    void Remove(Timesheet timesheet);
 }

@@ -9,8 +9,17 @@ public class UserRepository(PrmDbContext context) : IUserRepository
     public async Task<User?> GetByIdAsync(long id, CancellationToken cancellationToken = default) =>
         await context.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
+    public async Task<User?> GetByIdWithDetailsAsync(long id, CancellationToken cancellationToken = default) =>
+        await context.Users
+            .Include(u => u.Role)
+            .Include(u => u.ResourceProfile)
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+
     public async Task<User?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default) =>
-        await context.Users.FirstOrDefaultAsync(u => u.Username == username.ToLowerInvariant(), cancellationToken);
+        await context.Users
+            .Include(u => u.Role)
+            .Include(u => u.ResourceProfile)
+            .FirstOrDefaultAsync(u => u.Username == username.ToLowerInvariant(), cancellationToken);
 
     public async Task<bool> ExistsByUsernameAsync(string username, CancellationToken cancellationToken = default) =>
         await context.Users.AnyAsync(u => u.Username == username.ToLowerInvariant(), cancellationToken);
@@ -19,7 +28,12 @@ public class UserRepository(PrmDbContext context) : IUserRepository
         await context.Users.AnyAsync(u => u.Email == email.ToLowerInvariant(), cancellationToken);
 
     public async Task<IReadOnlyList<User>> ListAsync(CancellationToken cancellationToken = default) =>
-        await context.Users.AsNoTracking().OrderBy(u => u.Id).ToListAsync(cancellationToken);
+        await context.Users
+            .AsNoTracking()
+            .Include(u => u.Role)
+            .Include(u => u.ResourceProfile)
+            .OrderBy(u => u.Id)
+            .ToListAsync(cancellationToken);
 
     public void Add(User user) => context.Users.Add(user);
 }

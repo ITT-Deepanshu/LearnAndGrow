@@ -1,8 +1,10 @@
 using System.Globalization;
+using System.Net.Mail;
+using System.Text.RegularExpressions;
 
 namespace PRM.ConsoleClient.Services;
 
-public sealed class ConsoleUi
+public sealed partial class ConsoleUi
 {
     private const int BoxWidth = 46;
 
@@ -103,15 +105,32 @@ public sealed class ConsoleUi
 
     public DateOnly? PromptDateOptional(string label)
     {
-        var input = PromptOptional(label);
-        if (string.IsNullOrWhiteSpace(input))
-            return null;
+        while (true)
+        {
+            var input = PromptOptional(label);
+            if (string.IsNullOrWhiteSpace(input))
+                return null;
 
-        if (TryParseDate(input, out var date))
-            return date;
+            if (TryParseDate(input, out var date))
+                return date;
 
-        WriteError("Invalid date. Use DD-MM-YYYY.");
-        return PromptDateOptional(label);
+            WriteError("Invalid date. Use DD-MM-YYYY.");
+        }
+    }
+
+    public DateOnly PromptWeekStartOptional(string label)
+    {
+        while (true)
+        {
+            var input = PromptOptional(label);
+            if (string.IsNullOrWhiteSpace(input))
+                return GetLastMonday();
+
+            if (TryParseDate(input, out var date))
+                return date;
+
+            WriteError("Invalid date. Use DD-MM-YYYY.");
+        }
     }
 
     public DateOnly PromptDate(string label)
@@ -122,6 +141,118 @@ public sealed class ConsoleUi
             if (TryParseDate(input, out var date))
                 return date;
             WriteError("Invalid date. Use DD-MM-YYYY.");
+        }
+    }
+
+    public string PromptRequired(string label, int minLength = 1, int maxLength = 256, bool secret = false)
+    {
+        while (true)
+        {
+            var input = Prompt(label, secret: secret);
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                WriteError($"{label} is required.");
+                continue;
+            }
+
+            if (input.Length < minLength)
+            {
+                WriteError($"{label} must be at least {minLength} characters.");
+                continue;
+            }
+
+            if (input.Length > maxLength)
+            {
+                WriteError($"{label} must be at most {maxLength} characters.");
+                continue;
+            }
+
+            return input;
+        }
+    }
+
+    public string PromptEmail(string label = "Email")
+    {
+        while (true)
+        {
+            var input = Prompt(label);
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                WriteError("Email is required.");
+                continue;
+            }
+
+            if (!IsValidEmail(input))
+            {
+                WriteError("Please enter a valid email address (e.g. user@company.com).");
+                continue;
+            }
+
+            return input;
+        }
+    }
+
+    public string PromptUsername(string label = "Username")
+    {
+        while (true)
+        {
+            var input = Prompt(label);
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                WriteError("Username is required.");
+                continue;
+            }
+
+            if (input.Length < 3)
+            {
+                WriteError("Username must be at least 3 characters.");
+                continue;
+            }
+
+            if (input.Length > 64)
+            {
+                WriteError("Username must be at most 64 characters.");
+                continue;
+            }
+
+            if (!UsernameRegex().IsMatch(input))
+            {
+                WriteError("Username must contain only lowercase letters, digits, and .-_ characters.");
+                continue;
+            }
+
+            return input;
+        }
+    }
+
+    public string PromptPassword(string label = "Password")
+    {
+        while (true)
+        {
+            var input = Prompt(label, secret: true);
+            var error = ValidatePassword(input);
+            if (error is not null)
+            {
+                WriteError(error);
+                continue;
+            }
+
+            return input;
+        }
+    }
+
+    public string PromptConfirmPassword(string password, string label = "Confirm Password")
+    {
+        while (true)
+        {
+            var input = Prompt(label, secret: true);
+            if (!string.Equals(input, password, StringComparison.Ordinal))
+            {
+                WriteError("Passwords do not match. Please try again.");
+                continue;
+            }
+
+            return input;
         }
     }
 
@@ -159,6 +290,9 @@ public sealed class ConsoleUi
 
     public string HealthEmoji(string health) => health.ToUpperInvariant() switch
     {
+        "GREEN" => "🟢 Green",
+        "YELLOW" => "🟡 Yellow",
+        "RED" => "🔴 Red",
         "AT_RISK" or "AT RISK" => "🔴 AT RISK",
         "ON_TRACK" or "ON TRACK" => "🟢 ON TRACK",
         "ATTENTION" => "🟡 ATTENTION",
@@ -171,17 +305,6 @@ public sealed class ConsoleUi
         var offset = ((int)date.DayOfWeek + 6) % 7;
         return date.AddDays(-offset);
     }
-
-    public DateOnly GetPreviousCompletedWeekMonday()
-    {
-        var currentWeekMonday = GetLastMonday();
-        var today = DateOnly.FromDateTime(DateTime.Today);
-        if (today > currentWeekMonday.AddDays(6))
-            return currentWeekMonday;
-        return currentWeekMonday.AddDays(-7);
-    }
-
-    public bool TryParseDateInput(string input, out DateOnly date) => TryParseDate(input, out date);
 
     private static void PrintRow(IReadOnlyList<string> cells, int[] widths)
     {
@@ -240,4 +363,35 @@ public sealed class ConsoleUi
             return true;
         return DateOnly.TryParse(input, CultureInfo.InvariantCulture, DateTimeStyles.None, out date);
     }
+
+    private static bool IsValidEmail(string input)
+    {
+        try
+        {
+            _ = new MailAddress(input);
+            return input.Contains('@', StringComparison.Ordinal)
+                && input.Contains('.', StringComparison.Ordinal)
+                && !input.EndsWith('.');
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+    }
+
+    private static string? ValidatePassword(string? input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+            return "Password is required.";
+        if (input.Length < 8)
+            return "Password must be at least 8 characters.";
+        if (!input.Any(char.IsUpper))
+            return "Password must contain an uppercase letter.";
+        if (!input.Any(char.IsDigit))
+            return "Password must contain a digit.";
+        return null;
+    }
+
+    [GeneratedRegex("^[a-z0-9._-]+$")]
+    private static partial Regex UsernameRegex();
 }

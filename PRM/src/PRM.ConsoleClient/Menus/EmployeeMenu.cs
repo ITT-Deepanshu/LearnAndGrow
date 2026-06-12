@@ -1,3 +1,4 @@
+using PRM.ConsoleClient.Api;
 using PRM.ConsoleClient.Services;
 using PRM.ConsoleClient.Views.Employee;
 
@@ -9,7 +10,8 @@ public sealed class EmployeeMenu(
     SubmitTimesheetView submitTimesheet,
     MyTimesheetsView myTimesheets,
     MyAllocationsView myAllocations,
-    ApiClient api)
+    AuthApi auth,
+    TimesheetsApi timesheets)
 {
     public async Task RunAsync(CancellationToken ct = default)
     {
@@ -32,7 +34,7 @@ public sealed class EmployeeMenu(
                 case "2": await myTimesheets.RunAsync(ct); break;
                 case "3": await myAllocations.RunAsync(ct); break;
                 case "4":
-                    await api.LogoutAsync(ct);
+                    await auth.LogoutAsync(ct);
                     return;
                 default:
                     ui.WriteError("Invalid option.");
@@ -46,19 +48,14 @@ public sealed class EmployeeMenu(
     {
         try
         {
-            var timesheets = await api.ListMyTimesheetsAsync(ct);
-            var previousWeek = ui.GetPreviousCompletedWeekMonday();
-            var missed = timesheets.FirstOrDefault(t =>
-                t.WeekStart == previousWeek &&
-                t.Status.Equals("Missed", StringComparison.OrdinalIgnoreCase));
+            var reminder = await timesheets.GetReminderAsync(ct);
+            if (reminder is null)
+                return;
 
-            if (missed is not null)
-            {
-                ui.WriteWarning($"Reminder: Timesheet for week {ui.FormatDate(previousWeek)} has not been submitted.");
-                Console.WriteLine();
-            }
+            ui.WriteWarning(reminder.Message);
+            Console.WriteLine();
         }
-        catch
+        catch (ApiException)
         {
             // Reminder is best-effort; do not block the menu.
         }

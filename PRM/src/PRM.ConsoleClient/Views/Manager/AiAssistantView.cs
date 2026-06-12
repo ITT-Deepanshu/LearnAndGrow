@@ -1,8 +1,10 @@
+using PRM.ConsoleClient.Api;
+using PRM.ConsoleClient.Helpers;
 using PRM.ConsoleClient.Services;
 
 namespace PRM.ConsoleClient.Views.Manager;
 
-public sealed class AiAssistantView(ApiClient api, ConsoleUi ui, AllocateResourceView allocateView)
+public sealed class AiAssistantView(ProjectsApi projects, AiApi ai, ConsoleUi ui, AllocateResourceView allocateView, TeamSkillMatchView teamSkillMatch)
 {
     public async Task RunAsync(CancellationToken ct = default)
     {
@@ -11,15 +13,17 @@ public sealed class AiAssistantView(ApiClient api, ConsoleUi ui, AllocateResourc
             ui.ClearScreen();
             ui.DrawBox("AI ASSISTANT");
             Console.WriteLine("1. Skill Match    — Find best employees for a project requirement");
-            Console.WriteLine("2. Risk Summary   — Get a health analysis for a project");
-            Console.WriteLine("3. Back");
+            Console.WriteLine("2. Team Skill Match — Define a whole team from one request");
+            Console.WriteLine("3. Risk Summary   — Get a health analysis for a project");
+            Console.WriteLine("4. Back");
             Console.WriteLine();
 
             switch (ui.Prompt("Enter option"))
             {
                 case "1": await SkillMatchAsync(ct); break;
-                case "2": await RiskSummaryAsync(ct); break;
-                case "3": return;
+                case "2": await teamSkillMatch.RunAsync(ct); break;
+                case "3": await RiskSummaryAsync(ct); break;
+                case "4": return;
                 default: ui.WriteError("Invalid option."); ui.Pause(); break;
             }
         }
@@ -32,12 +36,17 @@ public sealed class AiAssistantView(ApiClient api, ConsoleUi ui, AllocateResourc
 
         try
         {
-            var projects = await api.ListProjectsAsync(ct);
-            if (projects.Count == 0) { ui.WriteError("No projects available."); ui.Pause(); return; }
+            var projectList = await projects.ListAsync(ct);
+            if (projectList.Count == 0) { ui.WriteError("No projects available."); ui.Pause(); return; }
 
-            foreach (var p in projects)
-                Console.WriteLine($"  {p.Id}. {p.Name}");
-            var projectId = ui.PromptLong("Select project ID");
+            ui.PrintTable(
+                ["ID", "Project", "Status", "Health"],
+                projectList.Select(p => new List<string>
+                {
+                    p.Id.ToString(), p.Name, p.Status, ui.HealthEmoji(p.Health)
+                }));
+            var projectId = ProjectListHelper.PromptProjectId(projectList, ui, "Enter project ID or name");
+            if (projectId is null) { ui.Pause(); return; }
 
             Console.WriteLine();
             Console.WriteLine("Describe your project requirement in plain English:");
@@ -45,15 +54,22 @@ public sealed class AiAssistantView(ApiClient api, ConsoleUi ui, AllocateResourc
             Console.WriteLine();
             Console.WriteLine("Searching... (calling AI)");
 
-            var result = await api.SkillMatchAsync(projectId, requirement, ct);
+            var result = await ai.SkillMatchAsync(projectId.Value, requirement, ct);
+            var matches = result.Candidates.Where(c => c.SuggestedUtilisation is > 0).ToList();
             Console.WriteLine();
             Console.WriteLine("Results:");
-            for (var i = 0; i < result.Candidates.Count; i++)
+            if (matches.Count == 0)
             {
-                var c = result.Candidates[i];
-                Console.WriteLine($"  {i + 1}.  {c.Name}");
-                Console.WriteLine($"      Reason: {c.Reason}");
-                Console.WriteLine();
+                ui.WriteWarning("No resources with suggested utilisation above 0%.");
+            }
+            else
+            {
+                foreach (var c in matches)
+                {
+                    Console.WriteLine($"  Profile ID {c.ResourceProfileId}: {c.Name}  (Suggested: {c.SuggestedUtilisation}%)");
+                    Console.WriteLine($"      Reason: {c.Reason}");
+                    Console.WriteLine();
+                }
             }
 
             Console.WriteLine("  Note: These are AI-generated suggestions. Always verify availability");
@@ -73,19 +89,23 @@ public sealed class AiAssistantView(ApiClient api, ConsoleUi ui, AllocateResourc
 
         try
         {
-            var projects = await api.ListProjectsAsync(ct);
-            if (projects.Count == 0) { ui.WriteError("No projects available."); ui.Pause(); return; }
+            var projectList = await projects.ListAsync(ct);
+            if (projectList.Count == 0) { ui.WriteError("No projects available."); ui.Pause(); return; }
 
-            Console.WriteLine("Select project:");
-            for (var i = 0; i < projects.Count; i++)
-                Console.WriteLine($"  {i + 1}.  {projects[i].Name}    {ui.HealthEmoji(projects[i].Health)}");
+            ui.PrintTable(
+                ["ID", "Project", "End Date", "Health"],
+                projectList.Select(p => new List<string>
+                {
+                    p.Id.ToString(), p.Name, ui.FormatDate(p.EndDate), ui.HealthEmoji(p.Health)
+                }));
 
-            var choice = ui.PromptInt("Enter project number", 1, projects.Count) - 1;
-            var project = projects[choice];
+            var projectId = ProjectListHelper.PromptProjectId(projectList, ui, "Enter project ID or name");
+            if (projectId is null) { ui.Pause(); return; }
+            var project = projectList.First(p => p.Id == projectId.Value);
 
             Console.WriteLine();
             Console.WriteLine("Generating AI summary...");
-            var summary = await api.RiskSummaryAsync(project.Id, ct);
+            var summary = await ai.RiskSummaryAsync(project.Id, ct);
             Console.WriteLine();
             Console.WriteLine($"\"{summary.Paragraph}\"");
             Console.WriteLine();

@@ -1,19 +1,20 @@
+using PRM.ConsoleClient.Api;
 using PRM.ConsoleClient.Services;
 
 namespace PRM.ConsoleClient.Views.Admin;
 
-public sealed class ManageEmployeesView(ApiClient api, ConsoleUi ui)
+public sealed class ManageEmployeesView(EmployeesApi employees, AllocationsApi allocations, ConsoleUi ui)
 {
     public async Task RunAsync(CancellationToken ct = default)
     {
         while (true)
         {
             ui.ClearScreen();
-            ui.DrawBox("MANAGE EMPLOYEES");
-            Console.WriteLine("1. View All Employees");
-            Console.WriteLine("2. Update Employee");
-            Console.WriteLine("3. Deactivate Employee");
-            Console.WriteLine("4. Manage Employee Skills");
+            ui.DrawBox("MANAGE RESOURCES");
+            Console.WriteLine("1. View All resources");
+            Console.WriteLine("2. Update resourceProfile");
+            Console.WriteLine("3. Deactivate resourceProfile");
+            Console.WriteLine("4. Manage resourceProfile Skills");
             Console.WriteLine("5. Assign Manager");
             Console.WriteLine("6. Back");
             Console.WriteLine();
@@ -39,26 +40,29 @@ public sealed class ManageEmployeesView(ApiClient api, ConsoleUi ui)
         while (true)
         {
             ui.ClearScreen();
-            ui.DrawBox("ALL EMPLOYEES");
+            ui.DrawBox("ALL RESOURCES");
 
             try
             {
-                var employees = await api.ListEmployeesAsync(statusFilter, departmentFilter, ct);
+                var employeeList = await employees.ListAsync(statusFilter, departmentFilter, ct);
                 ui.PrintTable(
                     ["ID", "Name", "Department", "Status"],
-                    employees.Select(e => new List<string>
+                    employeeList.Select(e => new List<string>
                     {
                         e.Id.ToString(), e.FullName, e.Department, e.Status
                     }));
 
-                var allocated = employees.Count(e => e.Status.Equals("Allocated", StringComparison.OrdinalIgnoreCase));
-                var bench = employees.Count(e => e.Status.Equals("Bench", StringComparison.OrdinalIgnoreCase));
+                var allocated = employeeList.Count(e => e.Status.Equals("Allocated", StringComparison.OrdinalIgnoreCase));
+                var bench = employeeList.Count(e => e.Status.Equals("Bench", StringComparison.OrdinalIgnoreCase));
+                var inactive = employeeList.Count(e => e.Status.Equals("Inactive", StringComparison.OrdinalIgnoreCase));
                 Console.WriteLine();
-                Console.WriteLine($"Total: {employees.Count}   |   Allocated: {allocated}   |   Bench: {bench}");
+                Console.WriteLine($"Total: {employeeList.Count}   |   Allocated: {allocated}   |   Bench: {bench}   |   Inactive: {inactive}");
                 ui.DrawDivider();
-                Console.WriteLine("[F] Filter by Status / Department     [B] Back");
+                Console.WriteLine("[F] Filter by Status / Department     [R] Reactivate resource     [B] Back");
                 var action = ui.Prompt("Action").ToUpperInvariant();
                 if (action == "B") return;
+                if (action == "R")
+                    await ReactivateEmployeeAsync(employeeList, ct);
                 if (action == "F")
                 {
                     Console.WriteLine("Status: (1) Bench  (2) PartiallyAllocated  (3) Allocated  (4) Inactive  [Enter] Clear");
@@ -75,27 +79,52 @@ public sealed class ManageEmployeesView(ApiClient api, ConsoleUi ui)
         }
     }
 
-    private async Task UpdateEmployeeAsync(CancellationToken ct)
+    private async Task ReactivateEmployeeAsync(IReadOnlyList<Models.EmployeeListItem> employeeList, CancellationToken ct)
     {
-        ui.ClearScreen();
-        ui.DrawBox("UPDATE EMPLOYEE");
-        var id = ui.PromptLong("Enter Employee ID");
+        var id = ui.PromptLong("Enter resourceProfile ID to reactivate");
+        var employee = employeeList.FirstOrDefault(e => e.Id == id);
+        if (employee is null) { ui.WriteError("Resource not found."); ui.Pause(); return; }
+        if (!employee.Status.Equals("Inactive", StringComparison.OrdinalIgnoreCase))
+        {
+            ui.WriteError("Resource is not inactive.");
+            ui.Pause();
+            return;
+        }
+
+        Console.WriteLine($"Resource: {employee.FullName} ({employee.Department}) — currently Inactive");
+        if (!ui.Confirm("Reactivate this resource? Their login account will also be restored.")) return;
 
         try
         {
-            var employee = await api.GetEmployeeAsync(id, ct);
-            ui.DrawSection(employee.FullName);
-            Console.WriteLine($"Department  : {employee.Department}");
-            Console.WriteLine($"Designation : {employee.Designation}");
+            await employees.ReactivateAsync(id, ct);
+            ui.WriteSuccess($"Resource reactivated. {employee.FullName} can log in again.");
+            Console.WriteLine("Note: Previous allocations are NOT restored. Re-allocate manually if needed.");
+        }
+        catch (ApiException ex) { ui.WriteError(ex.Message); }
+        ui.Pause();
+    }
+
+    private async Task UpdateEmployeeAsync(CancellationToken ct)
+    {
+        ui.ClearScreen();
+        ui.DrawBox("UPDATE resourceProfile");
+        var id = ui.PromptLong("Enter resourceProfile ID");
+
+        try
+        {
+            var resourceProfile = await employees.GetAsync(id, ct);
+            ui.DrawSection(resourceProfile.FullName);
+            Console.WriteLine($"Department  : {resourceProfile.Department}");
+            Console.WriteLine($"Designation : {resourceProfile.Designation}");
             Console.WriteLine();
 
-            var department = ui.PromptOptional("New Department", employee.Department);
-            var designation = ui.PromptOptional("New Designation", employee.Designation);
+            var department = ui.PromptOptional("New Department", resourceProfile.Department);
+            var designation = ui.PromptOptional("New Designation", resourceProfile.Designation);
             ui.DrawDivider();
             if (ui.Prompt("Action [S] Save  [B] Back").ToUpperInvariant() != "S") return;
 
-            await api.UpdateEmployeeAsync(id, department, designation, ct);
-            ui.WriteSuccess("Employee updated.");
+            await employees.UpdateAsync(id, department, designation, ct);
+            ui.WriteSuccess("resourceProfile updated.");
         }
         catch (ApiException ex) { ui.WriteError(ex.Message); }
         ui.Pause();
@@ -104,36 +133,36 @@ public sealed class ManageEmployeesView(ApiClient api, ConsoleUi ui)
     private async Task DeactivateEmployeeAsync(CancellationToken ct)
     {
         ui.ClearScreen();
-        ui.DrawBox("DEACTIVATE EMPLOYEE");
-        var id = ui.PromptLong("Enter Employee ID");
+        ui.DrawBox("DEACTIVATE resourceProfile");
+        var id = ui.PromptLong("Enter resourceProfile ID");
 
         try
         {
-            var employee = await api.GetEmployeeAsync(id, ct);
-            var allocations = await api.ListAllocationsAsync(employeeId: id, projectId: null, ct);
-            var active = allocations.Where(a => a.ToDate >= DateOnly.FromDateTime(DateTime.Today)).ToList();
+            var resourceProfile = await employees.GetAsync(id, ct);
+            var allocationList = await allocations.ListAsync(employeeId: id, projectId: null, ct);
+            var active = allocationList.Where(a => a.ToDate >= DateOnly.FromDateTime(DateTime.Today)).ToList();
 
-            ui.DrawSection(employee.FullName);
-            Console.WriteLine($"Department : {employee.Department}");
-            Console.WriteLine($"Status     : {employee.Status}");
+            ui.DrawSection(resourceProfile.FullName);
+            Console.WriteLine($"Department : {resourceProfile.Department}");
+            Console.WriteLine($"Status     : {resourceProfile.Status}");
             Console.WriteLine();
 
             if (active.Count > 0)
             {
-                ui.WriteWarning($"This employee has {active.Count} active allocation(s).");
+                ui.WriteWarning($"This resourceProfile has {active.Count} active allocation(s).");
                 Console.WriteLine("   Ending their employment will remove them from:");
                 foreach (var a in active)
                     Console.WriteLine($"     - {a.ProjectName}  ({a.UtilisationPercentage}%,  ends {ui.FormatDate(a.ToDate)})");
                 Console.WriteLine();
             }
 
-            Console.WriteLine($"Are you sure you want to deactivate {employee.FullName}?");
+            Console.WriteLine($"Are you sure you want to deactivate {resourceProfile.FullName}?");
             Console.WriteLine("This will: set is_active = false, end all active allocations today,");
             Console.WriteLine("and block their login account.");
             if (!ui.Confirm("[Y] Yes, Deactivate")) return;
 
-            await api.DeactivateEmployeeAsync(id, ct);
-            ui.WriteSuccess("Employee deactivated.");
+            await employees.DeactivateAsync(id, ct);
+            ui.WriteSuccess("resourceProfile deactivated.");
         }
         catch (ApiException ex) { ui.WriteError(ex.Message); }
         ui.Pause();
@@ -143,20 +172,20 @@ public sealed class ManageEmployeesView(ApiClient api, ConsoleUi ui)
     {
         ui.ClearScreen();
         ui.DrawBox("MANAGE SKILLS");
-        var id = ui.PromptLong("Enter Employee ID");
+        var id = ui.PromptLong("Enter resourceProfile ID");
 
         try
         {
             while (true)
             {
-                var employee = await api.GetEmployeeAsync(id, ct);
+                var resourceProfile = await employees.GetAsync(id, ct);
                 ui.ClearScreen();
                 ui.DrawBox("MANAGE SKILLS");
-                ui.DrawSection(employee.FullName);
+                ui.DrawSection(resourceProfile.FullName);
                 Console.WriteLine("Current Skills:");
-                for (var i = 0; i < employee.Skills.Count; i++)
+                for (var i = 0; i < resourceProfile.Skills.Count; i++)
                 {
-                    var skill = employee.Skills[i];
+                    var skill = resourceProfile.Skills[i];
                     Console.WriteLine($"  {i + 1}.  {skill.Name,-18} {skill.Proficiency}");
                 }
                 ui.DrawDivider();
@@ -172,10 +201,10 @@ public sealed class ManageEmployeesView(ApiClient api, ConsoleUi ui)
                         await AddSkillAsync(id, ct);
                         break;
                     case "2":
-                        await UpdateSkillAsync(id, employee, ct);
+                        await UpdateSkillAsync(id, resourceProfile, ct);
                         break;
                     case "3":
-                        await RemoveSkillAsync(id, employee, ct);
+                        await RemoveSkillAsync(id, resourceProfile, ct);
                         break;
                     case "4":
                         return;
@@ -195,36 +224,36 @@ public sealed class ManageEmployeesView(ApiClient api, ConsoleUi ui)
 
         try
         {
-            await api.AddSkillAsync(employeeId, name, category, proficiency, ct);
+            await employees.AddSkillAsync(employeeId, name, category, proficiency, ct);
             ui.WriteSuccess("Skill added.");
             ui.Pause();
         }
         catch (ApiException ex) { ui.WriteError(ex.Message); ui.Pause(); }
     }
 
-    private async Task UpdateSkillAsync(long employeeId, Models.EmployeeDetail employee, CancellationToken ct)
+    private async Task UpdateSkillAsync(long employeeId, Models.EmployeeDetail resourceProfile, CancellationToken ct)
     {
-        if (employee.Skills.Count == 0) { ui.WriteError("No skills to update."); ui.Pause(); return; }
-        var index = ui.PromptInt("Enter skill #", 1, employee.Skills.Count) - 1;
+        if (resourceProfile.Skills.Count == 0) { ui.WriteError("No skills to update."); ui.Pause(); return; }
+        var index = ui.PromptInt("Enter skill #", 1, resourceProfile.Skills.Count) - 1;
         Console.WriteLine("Proficiency Level: (1) Beginner  (2) Intermediate  (3) Advanced");
         var proficiency = ui.PromptInt("Enter choice", 1, 3);
         try
         {
-            await api.UpdateSkillProficiencyAsync(employeeId, employee.Skills[index].Id, proficiency, ct);
+            await employees.UpdateSkillProficiencyAsync(employeeId, resourceProfile.Skills[index].Id, proficiency, ct);
             ui.WriteSuccess("Proficiency updated.");
             ui.Pause();
         }
         catch (ApiException ex) { ui.WriteError(ex.Message); ui.Pause(); }
     }
 
-    private async Task RemoveSkillAsync(long employeeId, Models.EmployeeDetail employee, CancellationToken ct)
+    private async Task RemoveSkillAsync(long employeeId, Models.EmployeeDetail resourceProfile, CancellationToken ct)
     {
-        if (employee.Skills.Count == 0) { ui.WriteError("No skills to remove."); ui.Pause(); return; }
-        var index = ui.PromptInt("Enter skill #", 1, employee.Skills.Count) - 1;
-        if (!ui.Confirm($"Remove {employee.Skills[index].Name}?")) return;
+        if (resourceProfile.Skills.Count == 0) { ui.WriteError("No skills to remove."); ui.Pause(); return; }
+        var index = ui.PromptInt("Enter skill #", 1, resourceProfile.Skills.Count) - 1;
+        if (!ui.Confirm($"Remove {resourceProfile.Skills[index].Name}?")) return;
         try
         {
-            await api.RemoveSkillAsync(employeeId, employee.Skills[index].Id, ct);
+            await employees.RemoveSkillAsync(employeeId, resourceProfile.Skills[index].Id, ct);
             ui.WriteSuccess("Skill removed.");
             ui.Pause();
         }
@@ -236,18 +265,18 @@ public sealed class ManageEmployeesView(ApiClient api, ConsoleUi ui)
         ui.ClearScreen();
         ui.DrawBox("ASSIGN MANAGER");
 
-        var employeeUserId = ui.PromptLong("Employee User ID");
+        var employeeUserId = ui.PromptLong("resourceProfile User ID");
         var managerUserId = ui.PromptLong("Manager User ID");
         ui.DrawDivider();
         if (ui.Prompt("Action [S] Save  [B] Back").ToUpperInvariant() != "S") return;
 
         try
         {
-            var employees = await api.ListEmployeesAsync(ct: ct);
-            var employee = employees.FirstOrDefault(e => e.UserId == employeeUserId);
-            if (employee is null) { ui.WriteError("Employee not found for the given User ID."); ui.Pause(); return; }
+            var employeeList = await employees.ListAsync(ct: ct);
+            var resourceProfile = employeeList.FirstOrDefault(e => e.UserId == employeeUserId);
+            if (resourceProfile is null) { ui.WriteError("Resource profile not found for the given User ID."); ui.Pause(); return; }
 
-            await api.AssignManagerAsync(employee.Id, managerUserId, ct);
+            await employees.AssignManagerAsync(resourceProfile.Id, managerUserId, ct);
             ui.WriteSuccess("Manager assigned.");
         }
         catch (ApiException ex) { ui.WriteError(ex.Message); }

@@ -7,14 +7,14 @@ public class Allocation : AuditableEntity
 {
     private Allocation() { }
 
-    public long EmployeeId { get; private set; }
+    public long ResourceProfileId { get; private set; }
     public long ProjectId { get; private set; }
     public decimal UtilisationPercentage { get; private set; }
     public DateOnly FromDate { get; private set; }
     public DateOnly ToDate { get; private set; }
     public DateOnly? EndedAt { get; private set; }
 
-    public Employee Employee { get; private set; } = null!;
+    public ResourceProfile ResourceProfile { get; private set; } = null!;
     public Project Project { get; private set; } = null!;
 
     public bool IsActiveOn(DateOnly date) =>
@@ -24,7 +24,7 @@ public class Allocation : AuditableEntity
         EndedAt is null && FromDate <= to && ToDate >= from;
 
     public static Allocation Create(
-        long employeeId,
+        long resourceProfileId,
         long projectId,
         decimal utilisationPercentage,
         DateOnly fromDate,
@@ -39,7 +39,7 @@ public class Allocation : AuditableEntity
 
         var allocation = new Allocation
         {
-            EmployeeId = employeeId,
+            ResourceProfileId = resourceProfileId,
             ProjectId = projectId,
             UtilisationPercentage = utilisationPercentage,
             FromDate = fromDate,

@@ -1,83 +1,99 @@
-using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PRM.Application.Features.Employees.Commands;
-using PRM.Application.Features.Employees.Dtos;
-using PRM.Application.Features.Employees.Queries;
+using PRM.Application.Employees;
 using PRM.Domain.Enums;
 
 namespace PRM.Api.Controllers;
 
+/// <summary>Resource profiles (employees): directory, skills, manager assignment, and status.</summary>
 [ApiController]
 [Route("api/v1/employees")]
 [Authorize]
-public sealed class EmployeesController(IMediator mediator) : ControllerBase
+[Tags("Employees")]
+public sealed class EmployeesController(IEmployeeService employeeService) : ControllerBase
 {
+    /// <summary>List employees with optional status and department filters. Admin and manager.</summary>
     [HttpGet]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "admin,manager")]
     public async Task<ActionResult<IReadOnlyList<EmployeeListItemDto>>> List(
-        [FromQuery] EmployeeStatus? status,
+        [FromQuery] ResourceProfileStatus? status,
         [FromQuery] string? department,
         CancellationToken cancellationToken) =>
-        Ok(await mediator.Send(new ListEmployeesQuery(status, department), cancellationToken));
+        Ok(await employeeService.ListEmployeesAsync(status, department, cancellationToken));
 
+    /// <summary>Get employee detail including skills and manager. Admin and manager.</summary>
     [HttpGet("{id:long}")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "admin,manager")]
     public async Task<ActionResult<EmployeeDetailDto>> GetById(long id, CancellationToken cancellationToken) =>
-        Ok(await mediator.Send(new GetEmployeeByIdQuery(id), cancellationToken));
+        Ok(await employeeService.GetEmployeeByIdAsync(id, cancellationToken));
 
+    /// <summary>Update department, designation, and related profile fields. Admin only.</summary>
     [HttpPut("{id:long}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Update(long id, [FromBody] UpdateEmployeeDto dto, CancellationToken cancellationToken)
     {
-        await mediator.Send(new UpdateEmployeeCommand(id, dto.Department, dto.Designation), cancellationToken);
+        await employeeService.UpdateEmployeeAsync(id, dto, cancellationToken);
         return NoContent();
     }
 
+    /// <summary>Mark an employee as inactive (bench/offboarding). Admin only.</summary>
     [HttpPost("{id:long}/deactivate")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Deactivate(long id, CancellationToken cancellationToken)
     {
-        await mediator.Send(new DeactivateEmployeeCommand(id), cancellationToken);
+        await employeeService.DeactivateEmployeeAsync(id, cancellationToken);
         return NoContent();
     }
 
+    /// <summary>Reactivate an inactive employee. Admin only.</summary>
+    [HttpPost("{id:long}/reactivate")]
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> Reactivate(long id, CancellationToken cancellationToken)
+    {
+        await employeeService.ReactivateEmployeeAsync(id, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Assign or change the reporting manager for an employee. Admin only.</summary>
     [HttpPost("{id:long}/assign-manager")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> AssignManager(long id, [FromBody] AssignManagerDto dto, CancellationToken cancellationToken)
     {
-        await mediator.Send(new AssignManagerCommand(id, dto.ManagerId), cancellationToken);
+        await employeeService.AssignManagerAsync(id, dto, cancellationToken);
         return NoContent();
     }
 
+    /// <summary>Add a skill to an employee's profile. Admin only.</summary>
     [HttpPost("{id:long}/skills")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<EmployeeSkillDto>> AddSkill(
+    [Authorize(Roles = "admin")]
+    public async Task<ActionResult<ResourceProfileSkillDto>> AddSkill(
         long id,
-        [FromBody] AddEmployeeSkillDto dto,
+        [FromBody] AddResourceProfileSkillDto dto,
         CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new AddEmployeeSkillCommand(id, dto.Name, dto.Category, dto.Proficiency), cancellationToken);
+        var result = await employeeService.AddSkillAsync(id, dto, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id }, result);
     }
 
+    /// <summary>Update proficiency level for an existing employee skill. Admin only.</summary>
     [HttpPut("{id:long}/skills/{skillId:long}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> UpdateSkillProficiency(
         long id,
         long skillId,
         [FromBody] UpdateSkillProficiencyDto dto,
         CancellationToken cancellationToken)
     {
-        await mediator.Send(new UpdateSkillProficiencyCommand(id, skillId, dto.Proficiency), cancellationToken);
+        await employeeService.UpdateSkillProficiencyAsync(id, skillId, dto, cancellationToken);
         return NoContent();
     }
 
+    /// <summary>Remove a skill from an employee's profile. Admin only.</summary>
     [HttpDelete("{id:long}/skills/{skillId:long}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> RemoveSkill(long id, long skillId, CancellationToken cancellationToken)
     {
-        await mediator.Send(new RemoveEmployeeSkillCommand(id, skillId), cancellationToken);
+        await employeeService.RemoveSkillAsync(id, skillId, cancellationToken);
         return NoContent();
     }
 }

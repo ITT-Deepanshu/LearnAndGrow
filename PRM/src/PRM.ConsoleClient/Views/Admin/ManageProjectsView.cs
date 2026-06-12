@@ -1,9 +1,10 @@
+using PRM.ConsoleClient.Api;
 using PRM.ConsoleClient.Models;
 using PRM.ConsoleClient.Services;
 
 namespace PRM.ConsoleClient.Views.Admin;
 
-public sealed class ManageProjectsView(ApiClient api, ConsoleUi ui)
+public sealed class ManageProjectsView(ProjectsApi projects, ConsoleUi ui)
 {
     public async Task RunAsync(CancellationToken ct = default)
     {
@@ -35,7 +36,7 @@ public sealed class ManageProjectsView(ApiClient api, ConsoleUi ui)
         ui.ClearScreen();
         ui.DrawBox("CREATE PROJECT");
 
-        var name = ui.Prompt("Project Name");
+        var name = ui.PromptRequired("Project Name", minLength: 2, maxLength: 128);
         var description = ui.Prompt("Description");
         var startDate = ui.PromptDate("Start Date (DD-MM-YYYY)");
         var endDate = ui.PromptDate("End Date (DD-MM-YYYY)");
@@ -49,7 +50,7 @@ public sealed class ManageProjectsView(ApiClient api, ConsoleUi ui)
 
         try
         {
-            await api.CreateProjectAsync(new CreateProjectRequest(
+            await projects.CreateAsync(new CreateProjectRequest(
                 name, description, startDate, endDate, status, managerId, storyPoints), ct);
             ui.WriteSuccess("Project created.");
         }
@@ -64,10 +65,10 @@ public sealed class ManageProjectsView(ApiClient api, ConsoleUi ui)
 
         try
         {
-            var projects = await api.ListProjectsAsync(ct);
+            var projectList = await projects.ListAsync(ct);
             ui.PrintTable(
                 ["ID", "Name", "Manager", "End Date", "Status", "Health"],
-                projects.Select(p => new List<string>
+                projectList.Select(p => new List<string>
                 {
                     p.Id.ToString(), p.Name, p.ManagerName, ui.FormatDate(p.EndDate), p.Status, p.Health
                 }));
@@ -86,7 +87,7 @@ public sealed class ManageProjectsView(ApiClient api, ConsoleUi ui)
 
         try
         {
-            var project = await api.GetProjectAsync(id, ct);
+            var project = await projects.GetAsync(id, ct);
             ui.DrawSection(project.Name);
             var name = ui.PromptOptional("Project Name", project.Name);
             var description = ui.PromptOptional("Description", project.Description);
@@ -103,7 +104,7 @@ public sealed class ManageProjectsView(ApiClient api, ConsoleUi ui)
             ui.DrawDivider();
             if (ui.Prompt("Action [S] Save  [B] Back").ToUpperInvariant() != "S") return;
 
-            await api.UpdateProjectAsync(id, new UpdateProjectRequest(
+            await projects.UpdateAsync(id, new UpdateProjectRequest(
                 name, description, startDate, endDate, status,
                 long.Parse(managerId), int.Parse(storyPoints)), ct);
             ui.WriteSuccess("Project updated.");
@@ -123,17 +124,17 @@ public sealed class ManageProjectsView(ApiClient api, ConsoleUi ui)
         {
             while (true)
             {
-                var project = await api.GetProjectAsync(projectId, ct);
-                var milestones = await api.ListMilestonesAsync(projectId, ct);
+                var project = await projects.GetAsync(projectId, ct);
+                var milestones = await projects.ListMilestonesAsync(projectId, ct);
                 ui.ClearScreen();
                 ui.DrawBox("MILESTONES");
                 ui.DrawSection(project.Name);
 
                 ui.PrintTable(
-                    ["#", "Title", "Due Date", "Story Pts", "Status"],
-                    milestones.Select((m, i) => new List<string>
+                    ["ID", "Title", "Due Date", "Story Pts", "Status"],
+                    milestones.Select(m => new List<string>
                     {
-                        $"{i + 1}.", m.Title, ui.FormatDate(m.DueDate), m.StoryPoints.ToString(), m.Status
+                        m.Id.ToString(), m.Title, ui.FormatDate(m.DueDate), m.StoryPoints.ToString(), m.Status
                     }));
 
                 var completed = milestones.Where(m => m.Status.Equals("Done", StringComparison.OrdinalIgnoreCase)).Sum(m => m.StoryPoints);
@@ -168,7 +169,7 @@ public sealed class ManageProjectsView(ApiClient api, ConsoleUi ui)
         var storyPoints = ui.PromptInt("Story Points", 0);
         try
         {
-            await api.AddMilestoneAsync(projectId, new AddMilestoneRequest(title, dueDate, storyPoints), ct);
+            await projects.AddMilestoneAsync(projectId, new AddMilestoneRequest(title, dueDate, storyPoints), ct);
             ui.WriteSuccess("Milestone added.");
             ui.Pause();
         }
@@ -178,12 +179,14 @@ public sealed class ManageProjectsView(ApiClient api, ConsoleUi ui)
     private async Task UpdateMilestoneStatusAsync(long projectId, IReadOnlyList<Milestone> milestones, CancellationToken ct)
     {
         if (milestones.Count == 0) { ui.WriteError("No milestones."); ui.Pause(); return; }
-        var index = ui.PromptInt("Enter Milestone #", 1, milestones.Count) - 1;
+        var milestoneId = ui.PromptLong("Enter milestone ID");
+        var milestone = milestones.FirstOrDefault(m => m.Id == milestoneId);
+        if (milestone is null) { ui.WriteError("Milestone not found."); ui.Pause(); return; }
         Console.WriteLine("New Status: (1) NOT_STARTED  (2) IN_PROGRESS  (3) DONE");
         var status = ui.PromptInt("Enter choice", 1, 3);
         try
         {
-            await api.UpdateMilestoneStatusAsync(projectId, milestones[index].Id, status, ct);
+            await projects.UpdateMilestoneStatusAsync(projectId, milestone.Id, status, ct);
             ui.WriteSuccess("Milestone updated.");
             ui.Pause();
         }

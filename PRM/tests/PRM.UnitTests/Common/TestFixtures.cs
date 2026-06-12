@@ -1,8 +1,6 @@
 using System.Reflection;
 using PRM.Domain.Entities;
 using PRM.Domain.Enums;
-using PRM.Domain.Factories;
-
 namespace PRM.UnitTests.Common;
 
 internal static class TestFixtures
@@ -37,26 +35,27 @@ internal static class TestFixtures
         string passwordHash = "hash",
         long id = 1)
     {
-        var user = UserFactory.CreateAccount("test.user", "test@prm.local", "Test User", passwordHash, role, 0, FixedUtc);
+        var user = User.Create("test.user", "test@prm.local", passwordHash, role, 0, FixedUtc, requiresPasswordChange: true);
         SetId(user, id);
+        SetProperty(user, "Role", Role.Create((long)role, role.ToString().ToLowerInvariant(), "Test role"));
         if (!isActive) user.Deactivate(0, FixedUtc);
         return user;
     }
 
-    public static Employee CreateEmployee(long userId = 2, long id = 10, EmployeeStatus status = EmployeeStatus.Bench)
+    public static ResourceProfile CreateResourceProfile(long userId = 2, long id = 10, ResourceProfileStatus status = ResourceProfileStatus.Bench)
     {
-        var employee = Employee.Create(userId, "Backend", "Developer", 1, FixedUtc);
-        SetId(employee, id);
-        var user = CreateUser(UserRole.Employee, id: userId);
-        SetProperty(employee, "User", user);
-        employee.RecomputeStatus(status switch
+        var profile = ResourceProfile.Create(userId, "Test User", "Backend", "Developer", 1, FixedUtc);
+        SetId(profile, id);
+        var user = CreateUser(UserRole.Resource, id: userId);
+        SetProperty(profile, "User", user);
+        profile.RecomputeStatus(status switch
         {
-            EmployeeStatus.Bench => 0,
-            EmployeeStatus.PartiallyAllocated => 50,
-            EmployeeStatus.Allocated => 100,
+            ResourceProfileStatus.Bench => 0,
+            ResourceProfileStatus.PartiallyAllocated => 50,
+            ResourceProfileStatus.Allocated => 100,
             _ => 0
         });
-        return employee;
+        return profile;
     }
 
     public static Project CreateProject(
@@ -64,7 +63,7 @@ internal static class TestFixtures
         ProjectStatus status = ProjectStatus.Active,
         long id = 201)
     {
-        var project = ProjectFactory.Create(
+        var project = Project.Create(
             "Alpha Portal",
             "Test project",
             new DateOnly(2026, 1, 1),
@@ -79,14 +78,14 @@ internal static class TestFixtures
     }
 
     public static Allocation CreateAllocation(
-        long employeeId,
+        long resourceProfileId,
         long projectId,
         decimal utilisation,
         DateOnly from,
         DateOnly to,
         long id = 100)
     {
-        var allocation = AllocationFactory.Create(employeeId, projectId, utilisation, from, to, 1, FixedUtc);
+        var allocation = Allocation.Create(resourceProfileId, projectId, utilisation, from, to, 1, FixedUtc);
         SetId(allocation, id);
         return allocation;
     }

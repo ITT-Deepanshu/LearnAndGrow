@@ -13,7 +13,7 @@ public class ProjectRepository(PrmDbContext context) : IProjectRepository
     public async Task<Project?> GetByIdWithDetailsAsync(long id, CancellationToken cancellationToken = default) =>
         await context.Projects
             .Include(p => p.Milestones)
-            .Include(p => p.Allocations).ThenInclude(a => a.Employee).ThenInclude(e => e.User)
+            .Include(p => p.Allocations).ThenInclude(a => a.ResourceProfile).ThenInclude(e => e.User)
             .Include(p => p.Manager)
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
 
@@ -31,7 +31,7 @@ public class ProjectRepository(PrmDbContext context) : IProjectRepository
     public async Task<IReadOnlyList<Project>> ListActiveWithDetailsAsync(CancellationToken cancellationToken = default) =>
         await context.Projects
             .Include(p => p.Milestones)
-            .Include(p => p.Allocations).ThenInclude(a => a.Employee).ThenInclude(e => e.User)
+            .Include(p => p.Allocations).ThenInclude(a => a.ResourceProfile).ThenInclude(e => e.User)
             .Where(p => p.IsActive && p.Status == ProjectStatus.Active)
             .OrderBy(p => p.Id)
             .ToListAsync(cancellationToken);

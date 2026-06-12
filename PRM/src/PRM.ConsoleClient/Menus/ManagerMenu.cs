@@ -1,3 +1,4 @@
+using PRM.ConsoleClient.Api;
 using PRM.ConsoleClient.Services;
 using PRM.ConsoleClient.Views.Manager;
 
@@ -11,7 +12,7 @@ public sealed class ManagerMenu(
     MyProjectsView myProjects,
     TeamTimesheetsView teamTimesheets,
     AiAssistantView aiAssistant,
-    ApiClient api)
+    AuthApi auth)
 {
     public async Task RunAsync(CancellationToken ct = default)
     {
@@ -36,7 +37,7 @@ public sealed class ManagerMenu(
                 case "4": await teamTimesheets.RunAsync(ct); break;
                 case "5": await aiAssistant.RunAsync(ct); break;
                 case "6":
-                    await api.LogoutAsync(ct);
+                    await auth.LogoutAsync(ct);
                     return;
                 default:
                     ui.WriteError("Invalid option.");

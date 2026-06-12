@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using PRM.Application.Interfaces.Auth;
 using PRM.Domain.Entities;
 using PRM.Domain.Enums;
-using PRM.Domain.Factories;
 
 namespace PRM.Persistence.Seed;
 
@@ -15,8 +14,17 @@ public static class DatabaseSeeder
             return;
 
         var utcNow = DateTime.UtcNow;
-        var admin = UserFactory.CreateAdminBootstrap(passwordHasher.Hash("Admin@1234"), utcNow);
+        var admin = User.Create("admin", "admin@prm.local", passwordHasher.Hash("Admin@1234"), UserRole.Admin, 0, utcNow, requiresPasswordChange: true);
         context.Users.Add(admin);
+        await context.SaveChangesAsync(cancellationToken);
+
+        context.ResourceProfiles.Add(ResourceProfile.Create(
+            admin.Id,
+            "System Administrator",
+            string.Empty,
+            string.Empty,
+            0,
+            utcNow));
 
         context.SystemConfigurations.Add(SystemConfiguration.CreateDefault(0, utcNow));
 

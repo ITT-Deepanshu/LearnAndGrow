@@ -10,24 +10,25 @@ public class User : AuditableEntity
 
     public string Username { get; private set; } = string.Empty;
     public string Email { get; private set; } = string.Empty;
-    public string FullName { get; private set; } = string.Empty;
     public string PasswordHash { get; private set; } = string.Empty;
-    public UserRole Role { get; private set; }
+    public long RoleId { get; private set; }
     public bool IsActive { get; private set; } = true;
-    public bool ForcePasswordChange { get; private set; }
+    public bool RequiresPasswordChange { get; private set; }
     public DateTime? LastLoginAt { get; private set; }
 
-    public Employee? EmployeeProfile { get; private set; }
+    public Role Role { get; private set; } = null!;
+    public ResourceProfile? ResourceProfile { get; private set; }
+
+    public UserRole AppRole => (UserRole)RoleId;
 
     public static User Create(
         string username,
         string email,
-        string fullName,
         string passwordHash,
         UserRole role,
         long createdBy,
         DateTime utcNow,
-        bool forcePasswordChange = true)
+        bool requiresPasswordChange = true)
     {
         if (string.IsNullOrWhiteSpace(username))
             throw new ValidationException("Username is required.");
@@ -38,10 +39,9 @@ public class User : AuditableEntity
         {
             Username = username.Trim().ToLowerInvariant(),
             Email = email.Trim().ToLowerInvariant(),
-            FullName = fullName.Trim(),
             PasswordHash = passwordHash,
-            Role = role,
-            ForcePasswordChange = forcePasswordChange,
+            RoleId = (long)role,
+            RequiresPasswordChange = requiresPasswordChange,
             IsActive = true
         };
         user.SetCreated(createdBy, utcNow);
@@ -51,13 +51,13 @@ public class User : AuditableEntity
     public void ChangePassword(string newPasswordHash, long actorId, DateTime utcNow)
     {
         PasswordHash = newPasswordHash;
-        ForcePasswordChange = false;
+        RequiresPasswordChange = false;
         SetModified(actorId, utcNow);
     }
 
     public void RequirePasswordChange(long actorId, DateTime utcNow)
     {
-        ForcePasswordChange = true;
+        RequiresPasswordChange = true;
         SetModified(actorId, utcNow);
     }
 

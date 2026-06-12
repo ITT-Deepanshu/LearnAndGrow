@@ -1,8 +1,9 @@
+using PRM.ConsoleClient.Api;
 using PRM.ConsoleClient.Services;
 
 namespace PRM.ConsoleClient.Views.Employee;
 
-public sealed class MyTimesheetsView(ApiClient api, ConsoleUi ui)
+public sealed class MyTimesheetsView(TimesheetsApi timesheets, ConsoleUi ui)
 {
     public async Task RunAsync(CancellationToken ct = default)
     {
@@ -11,10 +12,10 @@ public sealed class MyTimesheetsView(ApiClient api, ConsoleUi ui)
 
         try
         {
-            var timesheets = await api.ListMyTimesheetsAsync(ct);
+            var timesheetList = await timesheets.ListMyAsync(ct);
             ui.PrintTable(
                 ["Week Start", "Total Hrs", "Status"],
-                timesheets.Select(t => new List<string>
+                timesheetList.Select(t => new List<string>
                 {
                     ui.FormatDate(t.WeekStart),
                     $"{t.TotalHours:0} hrs",
@@ -25,26 +26,26 @@ public sealed class MyTimesheetsView(ApiClient api, ConsoleUi ui)
             Console.WriteLine("[V] View week details     [B] Back");
             var action = ui.Prompt("Action").ToUpperInvariant();
             if (action == "V")
-                await ViewWeekDetailAsync(timesheets, ct);
+                await ViewWeekDetailAsync(timesheetList, ct);
         }
         catch (ApiException ex) { ui.WriteError(ex.Message); ui.Pause(); }
     }
 
-    private async Task ViewWeekDetailAsync(IReadOnlyList<Models.TimesheetListItem> timesheets, CancellationToken ct)
+    private async Task ViewWeekDetailAsync(IReadOnlyList<Models.TimesheetListItem> timesheetList, CancellationToken ct)
     {
-        if (timesheets.Count == 0) return;
+        if (timesheetList.Count == 0) return;
 
-        for (var i = 0; i < timesheets.Count; i++)
-            Console.WriteLine($"{i + 1}. {ui.FormatDate(timesheets[i].WeekStart)} — {timesheets[i].Status}");
+        for (var i = 0; i < timesheetList.Count; i++)
+            Console.WriteLine($"{i + 1}. {ui.FormatDate(timesheetList[i].WeekStart)} — {timesheetList[i].Status}");
 
-        var choice = ui.PromptInt("Select week #", 1, timesheets.Count) - 1;
-        var week = timesheets[choice].WeekStart;
+        var choice = ui.PromptInt("Select week #", 1, timesheetList.Count) - 1;
+        var week = timesheetList[choice].WeekStart;
 
         try
         {
-            var detail = await api.GetMyTimesheetForWeekAsync(week, ct);
+            var detail = await timesheets.GetMyForWeekAsync(week, ct);
             ui.ClearScreen();
-            ui.DrawSection($"Week: {ui.FormatDate(week)} — Status: {timesheets[choice].Status}");
+            ui.DrawSection($"Week: {ui.FormatDate(week)} — Status: {timesheetList[choice].Status}");
 
             if (detail is null || detail.Entries.Count == 0)
             {

@@ -5,6 +5,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <CollectCoverage>true</CollectCoverage>
+    <CoverletOutputFormat>cobertura</CoverletOutputFormat>
+    <Include>[PRM.Application]*,[PRM.Api]*,[PRM.ConsoleClient]*,[PRM.Domain]*,[PRM.Infrastructure]*,[PRM.SharedKernel]*</Include>
+    <Exclude>[PRM.Persistence]*,[PRM.Api]PRM.Api.Controllers.*,[PRM.Api]Program,[PRM.ConsoleClient]PRM.ConsoleClient.Views.*,[PRM.ConsoleClient]PRM.ConsoleClient.Menus.*,[PRM.ConsoleClient]PRM.ConsoleClient.Program</Exclude>
+    <Threshold>60</Threshold>
+    <ThresholdType>line</ThresholdType>
+    <ThresholdStat>total</ThresholdStat>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +30,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\PRM.Api\PRM.Api.csproj" />
+    <ProjectReference Include="..\..\src\PRM.ConsoleClient\PRM.ConsoleClient.csproj" />
     <ProjectReference Include="..\..\src\PRM.Domain\PRM.Domain.csproj" />
     <ProjectReference Include="..\..\src\PRM.Application\PRM.Application.csproj" />
     <ProjectReference Include="..\..\src\PRM.SharedKernel\PRM.SharedKernel.csproj" />

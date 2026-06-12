@@ -1,9 +1,10 @@
+using PRM.ConsoleClient.Api;
 using PRM.ConsoleClient.Models;
 using PRM.ConsoleClient.Services;
 
 namespace PRM.ConsoleClient.Views.Admin;
 
-public sealed class ManageUsersView(ApiClient api, ConsoleUi ui)
+public sealed class ManageUsersView(UsersApi usersApi, ConsoleUi ui)
 {
     public async Task RunAsync(CancellationToken ct = default)
     {
@@ -35,13 +36,14 @@ public sealed class ManageUsersView(ApiClient api, ConsoleUi ui)
         ui.ClearScreen();
         ui.DrawBox("CREATE USER ACCOUNT");
 
-        var fullName = ui.Prompt("Full Name");
-        var email = ui.Prompt("Email");
-        var username = ui.Prompt("Username");
-        var tempPassword = ui.Prompt("Temporary Password", secret: true);
+        var fullName = ui.PromptRequired("Full Name", minLength: 2, maxLength: 128);
+        var email = ui.PromptEmail();
+        var username = ui.PromptUsername();
+        var tempPassword = ui.PromptPassword("Temporary Password");
+        var confirmPassword = ui.PromptConfirmPassword(tempPassword, "Confirm Temporary Password");
         Console.WriteLine("Role: (1) Admin  (2) Manager  (3) Employee");
         var roleChoice = ui.PromptInt("Enter choice", 1, 3);
-        var role = roleChoice switch { 1 => "Admin", 2 => "Manager", _ => "Employee" };
+        var role = roleChoice switch { 1 => "admin", 2 => "manager", _ => "resource" };
 
         ui.DrawDivider();
         var action = ui.Prompt("Action [S] Save  [B] Back").ToUpperInvariant();
@@ -49,7 +51,7 @@ public sealed class ManageUsersView(ApiClient api, ConsoleUi ui)
 
         try
         {
-            await api.CreateUserAsync(new CreateUserRequest(fullName, email, username, tempPassword, role), ct);
+            await usersApi.CreateAsync(new CreateUserRequest(fullName, email, username, tempPassword, role), ct);
             ui.WriteSuccess("Account created. User must change password on first login.");
         }
         catch (ApiException ex) { ui.WriteError(ex.Message); }
@@ -63,10 +65,10 @@ public sealed class ManageUsersView(ApiClient api, ConsoleUi ui)
 
         try
         {
-            var users = await api.ListUsersAsync(ct);
+            var userList = await usersApi.ListAsync(ct);
             ui.PrintTable(
                 ["ID", "Username", "Role", "Status"],
-                users.Select(u => new List<string>
+                userList.Select(u => new List<string>
                 {
                     u.Id.ToString(),
                     u.Username,
@@ -75,21 +77,21 @@ public sealed class ManageUsersView(ApiClient api, ConsoleUi ui)
                 }));
 
             Console.WriteLine();
-            Console.WriteLine($"Total: {users.Count}   |   Active: {users.Count(u => u.IsActive)}   |   Inactive: {users.Count(u => !u.IsActive)}");
+            Console.WriteLine($"Total: {userList.Count}   |   Active: {userList.Count(u => u.IsActive)}   |   Inactive: {userList.Count(u => !u.IsActive)}");
             ui.DrawDivider();
             Console.WriteLine("[R] Reactivate a user     [B] Back");
             var action = ui.Prompt("Action").ToUpperInvariant();
 
             if (action == "R")
-                await ReactivateUserAsync(users, ct);
+                await ReactivateUserAsync(userList, ct);
         }
         catch (ApiException ex) { ui.WriteError(ex.Message); ui.Pause(); }
     }
 
-    private async Task ReactivateUserAsync(IReadOnlyList<UserListItem> users, CancellationToken ct)
+    private async Task ReactivateUserAsync(IReadOnlyList<UserListItem> userList, CancellationToken ct)
     {
         var id = ui.PromptLong("Enter User ID to reactivate");
-        var user = users.FirstOrDefault(u => u.Id == id);
+        var user = userList.FirstOrDefault(u => u.Id == id);
         if (user is null) { ui.WriteError("User not found."); ui.Pause(); return; }
         if (user.IsActive) { ui.WriteError("User is already active."); ui.Pause(); return; }
 
@@ -98,7 +100,7 @@ public sealed class ManageUsersView(ApiClient api, ConsoleUi ui)
 
         try
         {
-            await api.ReactivateUserAsync(id, ct);
+            await usersApi.ReactivateAsync(id, ct);
             ui.WriteSuccess($"Account reactivated. {user.Username} can now log in.");
             Console.WriteLine("Note: Previous allocations are NOT restored. Admin must re-allocate manually if needed.");
         }
@@ -114,20 +116,21 @@ public sealed class ManageUsersView(ApiClient api, ConsoleUi ui)
         var input = ui.Prompt("Enter Username or User ID");
         try
         {
-            var users = await api.ListUsersAsync(ct);
+            var userList = await usersApi.ListAsync(ct);
             var user = long.TryParse(input, out var id)
-                ? users.FirstOrDefault(u => u.Id == id)
-                : users.FirstOrDefault(u => u.Username.Equals(input, StringComparison.OrdinalIgnoreCase));
+                ? userList.FirstOrDefault(u => u.Id == id)
+                : userList.FirstOrDefault(u => u.Username.Equals(input, StringComparison.OrdinalIgnoreCase));
 
             if (user is null) { ui.WriteError("User not found."); ui.Pause(); return; }
 
-            var detail = await api.GetUserAsync(user.Id, ct);
+            var detail = await usersApi.GetAsync(user.Id, ct);
             Console.WriteLine($"User found: {detail.FullName} ({detail.Role})");
-            var newPassword = ui.Prompt("New Temporary Password", secret: true);
+            var newPassword = ui.PromptPassword("New Temporary Password");
+            var confirmPassword = ui.PromptConfirmPassword(newPassword);
             ui.DrawDivider();
             if (ui.Prompt("Action [S] Save  [B] Back").ToUpperInvariant() != "S") return;
 
-            await api.ResetUserPasswordAsync(user.Id, newPassword, newPassword, ct);
+            await usersApi.ResetPasswordAsync(user.Id, newPassword, confirmPassword, ct);
             ui.WriteSuccess("Password reset. User will be prompted to change it on next login.");
         }
         catch (ApiException ex) { ui.WriteError(ex.Message); }
@@ -142,15 +145,15 @@ public sealed class ManageUsersView(ApiClient api, ConsoleUi ui)
         var input = ui.Prompt("Enter Username or User ID");
         try
         {
-            var users = await api.ListUsersAsync(ct);
+            var userList = await usersApi.ListAsync(ct);
             var user = long.TryParse(input, out var id)
-                ? users.FirstOrDefault(u => u.Id == id)
-                : users.FirstOrDefault(u => u.Username.Equals(input, StringComparison.OrdinalIgnoreCase));
+                ? userList.FirstOrDefault(u => u.Id == id)
+                : userList.FirstOrDefault(u => u.Username.Equals(input, StringComparison.OrdinalIgnoreCase));
 
             if (user is null) { ui.WriteError("User not found."); ui.Pause(); return; }
             if (!user.IsActive) { ui.WriteError("User is already inactive."); ui.Pause(); return; }
 
-            var detail = await api.GetUserAsync(user.Id, ct);
+            var detail = await usersApi.GetAsync(user.Id, ct);
             Console.WriteLine($"User found: {detail.FullName} ({detail.Role})");
             Console.WriteLine("Status     : Active");
             Console.WriteLine();
@@ -158,7 +161,7 @@ public sealed class ManageUsersView(ApiClient api, ConsoleUi ui)
             Console.WriteLine("Deactivated users cannot log in. Their data is preserved.");
             if (!ui.Confirm("[Y] Yes, Deactivate")) return;
 
-            await api.DeactivateUserAsync(user.Id, ct);
+            await usersApi.DeactivateAsync(user.Id, ct);
             ui.WriteSuccess("User deactivated.");
         }
         catch (ApiException ex) { ui.WriteError(ex.Message); }

@@ -1,9 +1,16 @@
+using PRM.ConsoleClient.Api;
+using PRM.ConsoleClient.Helpers;
 using PRM.ConsoleClient.Models;
 using PRM.ConsoleClient.Services;
 
 namespace PRM.ConsoleClient.Views.Manager;
 
-public sealed class AllocateResourceView(ApiClient api, ConsoleUi ui)
+public sealed class AllocateResourceView(
+    ProjectsApi projects,
+    EmployeesApi employees,
+    AllocationsApi allocations,
+    AiApi ai,
+    ConsoleUi ui)
 {
     public async Task RunAsync(CancellationToken ct = default)
     {
@@ -30,19 +37,21 @@ public sealed class AllocateResourceView(ApiClient api, ConsoleUi ui)
 
     private async Task<long?> SelectProjectAsync(CancellationToken ct)
     {
-        var projects = await api.ListProjectsAsync(ct);
-        if (projects.Count == 0) { ui.WriteError("No projects available."); return null; }
+        var projectList = await projects.ListAsync(ct);
+        if (projectList.Count == 0) { ui.WriteError("No projects available."); return null; }
 
-        foreach (var p in projects)
-            Console.WriteLine($"  {p.Id}. {p.Name} ({p.Status})");
+        ui.PrintTable(
+            ["ID", "Project", "Status", "End Date"],
+            projectList.Select(p => new List<string>
+            {
+                p.Id.ToString(), p.Name, p.Status, ui.FormatDate(p.EndDate)
+            }));
 
-        var input = ui.Prompt("Enter project name or ID");
-        var project = long.TryParse(input, out var id)
-            ? projects.FirstOrDefault(p => p.Id == id)
-            : projects.FirstOrDefault(p => p.Name.Contains(input, StringComparison.OrdinalIgnoreCase));
+        var projectId = ProjectListHelper.PromptProjectId(projectList, ui, "Enter project ID or name");
+        if (projectId is null) return null;
 
-        if (project is null) { ui.WriteError("Project not found."); return null; }
-        Console.WriteLine($"Selected: {project.Name} ({project.Id})");
+        var project = projectList.First(p => p.Id == projectId.Value);
+        Console.WriteLine($"Selected: {project.Name} (ID: {project.Id})");
         return project.Id;
     }
 
@@ -65,32 +74,42 @@ public sealed class AllocateResourceView(ApiClient api, ConsoleUi ui)
             Console.WriteLine("Searching... (AI matching in progress)");
             Console.WriteLine();
 
-            var result = await api.SkillMatchAsync(projectId.Value, requirement, ct);
-            if (result.Candidates.Count == 0)
+            var result = await ai.SkillMatchAsync(projectId.Value, requirement, ct);
+            var matches = result.Candidates
+                .Where(c => c.SuggestedUtilisation is > 0)
+                .ToList();
+
+            if (matches.Count == 0)
             {
-                ui.WriteWarning("No matching resources found.");
+                ui.WriteWarning("No matching resources found with suggested utilisation above 0%.");
                 ui.Pause();
                 return;
             }
 
             Console.WriteLine("AI-MATCHED RESULTS");
             ui.DrawDivider();
-            ui.PrintTable(
-                ["#", "Name", "Reason", "Suggested %"],
-                result.Candidates.Select((c, i) => new List<string>
-                {
-                    (i + 1).ToString(), c.Name, Truncate(c.Reason, 40), c.SuggestedUtilisation?.ToString() ?? "-"
-                }));
+            PrintAiMatchResults(matches);
 
             if (!string.IsNullOrWhiteSpace(result.Note))
                 Console.WriteLine($"Note: {result.Note}");
             ui.DrawDivider();
 
-            var choice = ui.PromptInt("Select employee (enter #, or 0 to cancel)", 0, result.Candidates.Count);
-            if (choice == 0) return;
+            var profileInput = ui.Prompt("Enter resource profile ID (or 0 to cancel)");
+            if (profileInput == "0") return;
 
-            var candidate = result.Candidates[choice - 1];
-            await ConfirmAllocationAsync(projectId.Value, candidate.EmployeeId, candidate.Name, candidate.SuggestedUtilisation, ct);
+            if (!long.TryParse(profileInput, out var profileId))
+            {
+                ui.WriteError("Please enter a valid resource profile ID.");
+                return;
+            }
+
+            var candidate = matches.FirstOrDefault(c => c.ResourceProfileId == profileId);
+            if (candidate is null)
+            {
+                ui.WriteError("Resource profile not found in AI results.");
+                return;
+            }
+            await ConfirmAllocationAsync(projectId.Value, candidate.ResourceProfileId, candidate.Name, candidate.SuggestedUtilisation, ct);
         }
         catch (ApiException ex) { ui.WriteError(ex.Message); ui.Pause(); }
     }
@@ -106,9 +125,9 @@ public sealed class AllocateResourceView(ApiClient api, ConsoleUi ui)
             var projectId = await SelectProjectAsync(ct);
             if (projectId is null) { ui.Pause(); return; }
 
-            var employeeId = ui.PromptLong("Enter Employee ID");
-            var employee = await api.GetEmployeeAsync(employeeId, ct);
-            await ConfirmAllocationAsync(projectId.Value, employeeId, employee.FullName, null, ct);
+            var employeeId = ui.PromptLong("Enter resourceProfile ID");
+            var resourceProfile = await employees.GetAsync(employeeId, ct);
+            await ConfirmAllocationAsync(projectId.Value, employeeId, resourceProfile.FullName, null, ct);
         }
         catch (ApiException ex) { ui.WriteError(ex.Message); ui.Pause(); }
     }
@@ -118,8 +137,8 @@ public sealed class AllocateResourceView(ApiClient api, ConsoleUi ui)
     {
         try
         {
-            var allocations = await api.ListAllocationsByEmployeeAsync(employeeId, ct);
-            var activeUtil = allocations.Where(a => a.EndedAt is null).Sum(a => a.UtilisationPercentage);
+            var allocationList = await allocations.ListByEmployeeAsync(employeeId, ct);
+            var activeUtil = allocationList.Where(a => a.EndedAt is null).Sum(a => a.UtilisationPercentage);
 
             ui.DrawSection(employeeName);
             Console.WriteLine($"Current Utilisation: {activeUtil}%");
@@ -135,9 +154,13 @@ public sealed class AllocateResourceView(ApiClient api, ConsoleUi ui)
 
             if (ui.Prompt("Action [C] Confirm  [B] Back").ToUpperInvariant() != "C") return;
 
-            var project = (await api.ListProjectsAsync(ct)).First(p => p.Id == projectId);
-            await api.CreateAllocationAsync(new CreateAllocationRequest(
-                projectId, employeeId, utilisation, fromDate, toDate), ct);
+            var project = (await projects.ListAsync(ct)).First(p => p.Id == projectId);
+            await allocations.CreateAsync(new CreateAllocationRequest(
+                ProjectId: projectId,
+                ResourceProfileId: employeeId,
+                UtilisationPercentage: utilisation,
+                FromDate: fromDate,
+                ToDate: toDate), ct);
             ui.WriteSuccess($"Allocation saved. {employeeName} → {project.Name} ({utilisation}%, {ui.FormatDate(fromDate)}–{ui.FormatDate(toDate)})");
         }
         catch (ApiException ex) { ui.WriteError(ex.Message); }
@@ -154,35 +177,49 @@ public sealed class AllocateResourceView(ApiClient api, ConsoleUi ui)
             var projectId = await SelectProjectAsync(ct);
             if (projectId is null) { ui.Pause(); return; }
 
-            var allocations = (await api.ListAllocationsByProjectAsync(projectId.Value, ct))
+            var allocationList = (await allocations.ListByProjectAsync(projectId.Value, ct))
                 .Where(a => a.EndedAt is null).ToList();
 
-            if (allocations.Count == 0) { ui.WriteError("No active allocations on this project."); ui.Pause(); return; }
+            if (allocationList.Count == 0) { ui.WriteError("No active allocations on this project."); ui.Pause(); return; }
 
             Console.WriteLine("Active Allocations on this project:");
             ui.PrintTable(
-                ["#", "Employee", "%", "From", "To"],
-                allocations.Select((a, i) => new List<string>
+                ["Allocation ID", "Resource", "%", "From", "To"],
+                allocationList.Select(a => new List<string>
                 {
-                    $"{i + 1}.", a.EmployeeName, $"{a.UtilisationPercentage}%",
+                    a.Id.ToString(), a.EmployeeName, $"{a.UtilisationPercentage}%",
                     ui.FormatDate(a.FromDate), ui.FormatDate(a.ToDate)
                 }));
 
-            var choice = ui.PromptInt("Select allocation to end", 1, allocations.Count) - 1;
-            var selected = allocations[choice];
+            var allocationId = ui.PromptLong("Enter allocation ID to end");
+            var selected = allocationList.FirstOrDefault(a => a.Id == allocationId);
+            if (selected is null)
+            {
+                ui.WriteError("Allocation not found.");
+                ui.Pause();
+                return;
+            }
             var today = DateOnly.FromDateTime(DateTime.Today);
 
             Console.WriteLine($"End {selected.EmployeeName}'s allocation on {selected.ProjectName}?");
             Console.WriteLine($"Set end date to today ({ui.FormatDate(today)})?");
             if (!ui.Confirm("[Y] Yes, End Now")) return;
 
-            await api.EndAllocationAsync(selected.Id, ct);
+            await allocations.EndAsync(selected.Id, ct);
             ui.WriteSuccess($"Allocation ended. {selected.EmployeeName} freed from {selected.ProjectName} as of {ui.FormatDate(today)}.");
         }
         catch (ApiException ex) { ui.WriteError(ex.Message); }
         ui.Pause();
     }
 
-    private static string Truncate(string text, int max) =>
-        text.Length <= max ? text : text[..(max - 3)] + "...";
+    private static void PrintAiMatchResults(IReadOnlyList<RankedCandidate> candidates)
+    {
+        for (var i = 0; i < candidates.Count; i++)
+        {
+            var c = candidates[i];
+            Console.WriteLine($"{i + 1}. Profile ID {c.ResourceProfileId}  |  {c.Name}  |  Suggested: {c.SuggestedUtilisation}%");
+            Console.WriteLine($"   Reason: {c.Reason}");
+            Console.WriteLine();
+        }
+    }
 }

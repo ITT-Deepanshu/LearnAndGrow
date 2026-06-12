@@ -19,24 +19,24 @@ public sealed class TokenStore
     public StoredTokens Load()
     {
         if (!File.Exists(_filePath))
-            return new StoredTokens(null, null, null);
+            return new StoredTokens(null, null);
 
         try
         {
             var json = File.ReadAllText(_filePath);
-            return JsonSerializer.Deserialize<StoredTokens>(json, JsonOptions) ?? new StoredTokens(null, null, null);
+            return JsonSerializer.Deserialize<StoredTokens>(json, JsonOptions) ?? new StoredTokens(null, null);
         }
         catch
         {
-            return new StoredTokens(null, null, null);
+            return new StoredTokens(null, null);
         }
     }
 
-    public void Save(string? accessToken, string? refreshToken, long? employeeId)
+    public void Save(string? accessToken, long? resourceProfileId)
     {
-        var tokens = new StoredTokens(accessToken, refreshToken, employeeId);
+        var tokens = new StoredTokens(accessToken, resourceProfileId);
         File.WriteAllText(_filePath, JsonSerializer.Serialize(tokens, JsonOptions));
     }
 
-    public void Clear() => Save(null, null, null);
+    public void Clear() => Save(null, null);
 }

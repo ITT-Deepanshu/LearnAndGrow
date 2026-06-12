@@ -10,20 +10,20 @@ public class Timesheet : AuditableEntity
 
     private Timesheet() { }
 
-    public long EmployeeId { get; private set; }
+    public long ResourceProfileId { get; private set; }
     public DateOnly WeekStart { get; private set; }
     public decimal TotalHours { get; private set; }
     public TimesheetStatus Status { get; private set; }
     public DateTime? SubmittedAt { get; private set; }
 
-    public Employee Employee { get; private set; } = null!;
+    public ResourceProfile ResourceProfile { get; private set; } = null!;
     public IReadOnlyCollection<TimesheetEntry> Entries => _entries.AsReadOnly();
 
-    public static Timesheet CreateMissed(long employeeId, DateOnly weekStart, long actorId, DateTime utcNow)
+    public static Timesheet CreateMissed(long resourceProfileId, DateOnly weekStart, long actorId, DateTime utcNow)
     {
         var timesheet = new Timesheet
         {
-            EmployeeId = employeeId,
+            ResourceProfileId = resourceProfileId,
             WeekStart = weekStart,
             TotalHours = 0,
             Status = TimesheetStatus.Missed
@@ -33,7 +33,7 @@ public class Timesheet : AuditableEntity
     }
 
     public static Timesheet Submit(
-        long employeeId,
+        long resourceProfileId,
         DateOnly weekStart,
         IEnumerable<TimesheetEntry> entries,
         int maxWeeklyHours,
@@ -53,7 +53,7 @@ public class Timesheet : AuditableEntity
 
         var timesheet = new Timesheet
         {
-            EmployeeId = employeeId,
+            ResourceProfileId = resourceProfileId,
             WeekStart = weekStart,
             TotalHours = totalHours,
             Status = TimesheetStatus.Submitted,

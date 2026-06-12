@@ -1,17 +1,19 @@
-using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PRM.Application.Features.Dashboard.Queries;
+using PRM.Application.Dashboard;
 
 namespace PRM.Api.Controllers;
 
+/// <summary>Manager dashboards and resource utilisation summaries.</summary>
 [ApiController]
 [Route("api/v1/dashboard")]
 [Authorize]
-public sealed class DashboardController(IMediator mediator) : ControllerBase
+[Tags("Dashboard")]
+public sealed class DashboardController(IDashboardService dashboardService) : ControllerBase
 {
+    /// <summary>Resource utilisation dashboard: bench, partially allocated, fully allocated, and drill-down. Manager only.</summary>
     [HttpGet("resources")]
-    [Authorize(Roles = "Manager")]
+    [Authorize(Roles = "manager")]
     public async Task<IActionResult> GetResources(CancellationToken cancellationToken) =>
-        Ok(await mediator.Send(new GetResourceDashboardQuery(), cancellationToken));
+        Ok(await dashboardService.GetResourceDashboardAsync(cancellationToken));
 }

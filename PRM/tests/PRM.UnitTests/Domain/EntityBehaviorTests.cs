@@ -2,7 +2,6 @@ using FluentAssertions;
 using PRM.Domain.Entities;
 using PRM.Domain.Enums;
 using PRM.Domain.Exceptions;
-using PRM.Domain.Factories;
 using PRM.UnitTests.Common;
 
 namespace PRM.UnitTests.Domain;
@@ -10,10 +9,10 @@ namespace PRM.UnitTests.Domain;
 public class EntityBehaviorTests
 {
     [Fact]
-    public void User_Create_SetsForcePasswordChange()
+    public void User_Create_SetsRequiresPasswordChange()
     {
-        var user = UserFactory.CreateAccount("new.user", "new@prm.local", "New", "hash", UserRole.Employee, 1, TestFixtures.FixedUtc);
-        user.ForcePasswordChange.Should().BeTrue();
+        var user = User.Create("new.user", "new@prm.local", "hash", UserRole.Resource, 1, TestFixtures.FixedUtc, requiresPasswordChange: true);
+        user.RequiresPasswordChange.Should().BeTrue();
     }
 
     [Fact]
@@ -32,19 +31,19 @@ public class EntityBehaviorTests
     }
 
     [Fact]
-    public void Employee_RecomputeStatus_SetsBenchWhenZeroUtilisation()
+    public void ResourceProfile_RecomputeStatus_SetsBenchWhenZeroUtilisation()
     {
-        var employee = TestFixtures.CreateEmployee();
-        employee.RecomputeStatus(0);
-        employee.Status.Should().Be(EmployeeStatus.Bench);
+        var resourceProfile = TestFixtures.CreateResourceProfile();
+        resourceProfile.RecomputeStatus(0);
+        resourceProfile.Status.Should().Be(ResourceProfileStatus.Bench);
     }
 
     [Fact]
-    public void Employee_RecomputeStatus_SetsPartialWhenBetweenZeroAnd100()
+    public void ResourceProfile_RecomputeStatus_SetsPartialWhenBetweenZeroAnd100()
     {
-        var employee = TestFixtures.CreateEmployee();
-        employee.RecomputeStatus(50);
-        employee.Status.Should().Be(EmployeeStatus.PartiallyAllocated);
+        var resourceProfile = TestFixtures.CreateResourceProfile();
+        resourceProfile.RecomputeStatus(50);
+        resourceProfile.Status.Should().Be(ResourceProfileStatus.PartiallyAllocated);
     }
 
     [Fact]

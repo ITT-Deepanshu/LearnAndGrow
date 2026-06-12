@@ -1,5 +1,5 @@
 using FluentAssertions;
-using PRM.Application.Features.Ai.Helpers;
+using PRM.Application.Ai;
 
 namespace PRM.UnitTests.Application.Ai;
 

@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PRM.Application.Interfaces.Ai;
 using PRM.Application.Interfaces.Auth;
 using PRM.Application.Interfaces.Common;
+using PRM.Application.Interfaces.Scheduling;
 using PRM.Application.Interfaces.Security;
 using PRM.Infrastructure.Ai;
 using PRM.Infrastructure.Auth;
@@ -26,10 +27,12 @@ public static class DependencyInjection
         services.AddSingleton<IClock, SystemClock>();
 
         services.AddScoped<AiApiKeyResolver>();
-        services.AddHttpClient<GeminiProvider>(client => client.Timeout = TimeSpan.FromSeconds(30));
-        services.AddHttpClient<GrokProvider>(client => client.Timeout = TimeSpan.FromSeconds(30));
+
+        var gemmaTimeout = configuration.GetSection($"{AiSettings.SectionName}:Gemma").GetValue("TimeoutSeconds", 60);
+        services.AddHttpClient<GemmaProvider>(client => client.Timeout = TimeSpan.FromSeconds(gemmaTimeout));
+        services.AddScoped<IAiProvider, GemmaProvider>(sp => sp.GetRequiredService<GemmaProvider>());
         services.AddScoped<IAiProviderOrchestrator, AiProviderOrchestrator>();
-        services.AddHostedService<PrmBackgroundService>();
+        services.AddScoped<IPrmBackgroundJobRunner, PrmBackgroundJobRunner>();
 
         return services;
     }

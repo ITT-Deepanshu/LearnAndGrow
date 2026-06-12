@@ -1,8 +1,9 @@
+using PRM.ConsoleClient.Api;
 using PRM.ConsoleClient.Services;
 
 namespace PRM.ConsoleClient.Views.Employee;
 
-public sealed class MyAllocationsView(ApiClient api, ConsoleUi ui)
+public sealed class MyAllocationsView(AllocationsApi allocations, ConsoleUi ui)
 {
     public async Task RunAsync(CancellationToken ct = default)
     {
@@ -11,14 +12,13 @@ public sealed class MyAllocationsView(ApiClient api, ConsoleUi ui)
 
         try
         {
-            var employeeId = await api.ResolveEmployeeIdAsync(ct);
-            var allocations = (await api.ListAllocationsByEmployeeAsync(employeeId, ct))
+            var allocationList = (await allocations.ListMyAsync(ct))
                 .Where(a => a.EndedAt is null)
                 .ToList();
 
             ui.PrintTable(
                 ["Project", "%", "From", "To", "Status"],
-                allocations.Select(a => new List<string>
+                allocationList.Select(a => new List<string>
                 {
                     a.ProjectName,
                     $"{a.UtilisationPercentage}%",
@@ -27,7 +27,7 @@ public sealed class MyAllocationsView(ApiClient api, ConsoleUi ui)
                     "ACTIVE"
                 }));
 
-            var total = allocations.Sum(a => a.UtilisationPercentage);
+            var total = allocationList.Sum(a => a.UtilisationPercentage);
             Console.WriteLine();
             Console.WriteLine($"Total Utilisation: {total}%");
             ui.DrawDivider();

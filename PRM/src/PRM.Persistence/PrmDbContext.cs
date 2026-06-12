@@ -5,10 +5,11 @@ namespace PRM.Persistence;
 
 public class PrmDbContext(DbContextOptions<PrmDbContext> options) : DbContext(options)
 {
+    public DbSet<Role> Roles => Set<Role>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<User> Users => Set<User>();
-    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
-    public DbSet<Employee> Employees => Set<Employee>();
-    public DbSet<EmployeeSkill> EmployeeSkills => Set<EmployeeSkill>();
+    public DbSet<ResourceProfile> ResourceProfiles => Set<ResourceProfile>();
+    public DbSet<ResourceProfileSkill> ResourceProfileSkills => Set<ResourceProfileSkill>();
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<ProjectMilestone> ProjectMilestones => Set<ProjectMilestone>();
     public DbSet<Allocation> Allocations => Set<Allocation>();

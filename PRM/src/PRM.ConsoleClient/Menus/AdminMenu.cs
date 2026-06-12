@@ -1,3 +1,4 @@
+using PRM.ConsoleClient.Api;
 using PRM.ConsoleClient.Services;
 using PRM.ConsoleClient.Views.Admin;
 
@@ -11,7 +12,7 @@ public sealed class AdminMenu(
     ManageProjectsView manageProjects,
     ViewAllocationsView viewAllocations,
     SystemConfigView systemConfig,
-    ApiClient api)
+    AuthApi auth)
 {
     public async Task RunAsync(CancellationToken ct = default)
     {
@@ -22,7 +23,7 @@ public sealed class AdminMenu(
                 "ADMIN PANEL",
                 $"Welcome, {session.FullName}  |  {ui.FormatNow()}");
 
-            Console.WriteLine("1. Manage Employees");
+            Console.WriteLine("1. Manage Resources");
             Console.WriteLine("2. Manage Projects");
             Console.WriteLine("3. View All Allocations");
             Console.WriteLine("4. Manage Users");
@@ -38,7 +39,7 @@ public sealed class AdminMenu(
                 case "4": await manageUsers.RunAsync(ct); break;
                 case "5": await systemConfig.RunAsync(ct); break;
                 case "6":
-                    await api.LogoutAsync(ct);
+                    await auth.LogoutAsync(ct);
                     return;
                 default:
                     ui.WriteError("Invalid option.");

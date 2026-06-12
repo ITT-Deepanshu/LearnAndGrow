@@ -1,8 +1,13 @@
+using PRM.ConsoleClient.Api;
 using PRM.ConsoleClient.Services;
 
 namespace PRM.ConsoleClient.Views.Manager;
 
-public sealed class ResourceDashboardView(ApiClient api, ConsoleUi ui)
+public sealed class ResourceDashboardView(
+    DashboardApi dashboard,
+    EmployeesApi employees,
+    AllocationsApi allocations,
+    ConsoleUi ui)
 {
     public async Task RunAsync(CancellationToken ct = default)
     {
@@ -10,14 +15,14 @@ public sealed class ResourceDashboardView(ApiClient api, ConsoleUi ui)
 
         try
         {
-            var dashboard = await api.GetResourceDashboardAsync(ct);
-            ui.DrawBox($"RESOURCE DASHBOARD — {dashboard.AsOfDate:MMMM yyyy}");
+            var data = await dashboard.GetResourcesAsync(ct);
+            ui.DrawBox($"RESOURCE DASHBOARD — {data.AsOfDate:MMMM yyyy}");
 
-            Console.WriteLine($"ON BENCH  ({dashboard.OnBench.Count} employees available)");
+            Console.WriteLine($"ON BENCH  ({data.OnBench.Count} employees available)");
             ui.DrawDivider();
             ui.PrintTable(
                 ["ID", "Name", "Department", "Skills"],
-                dashboard.OnBench.Select(e => new List<string>
+                data.OnBench.Select(e => new List<string>
                 {
                     e.Id.ToString(), e.FullName, e.Department, string.Join(", ", e.Skills)
                 }));
@@ -25,7 +30,7 @@ public sealed class ResourceDashboardView(ApiClient api, ConsoleUi ui)
             Console.WriteLine();
             Console.WriteLine("ACTIVE EMPLOYEES");
             ui.DrawDivider();
-            var active = dashboard.PartiallyAllocated.Concat(dashboard.FullyAllocated).ToList();
+            var active = data.PartiallyAllocated.Concat(data.FullyAllocated).ToList();
             ui.PrintTable(
                 ["ID", "Name", "Alloc %", "Availability"],
                 active.Select(e => new List<string>
@@ -37,37 +42,37 @@ public sealed class ResourceDashboardView(ApiClient api, ConsoleUi ui)
                 }));
 
             Console.WriteLine();
-            Console.WriteLine($"Bench: {dashboard.Counts.BenchCount}   |   Partial: {dashboard.Counts.PartiallyAllocatedCount}");
+            Console.WriteLine($"Bench: {data.Counts.BenchCount}   |   Partial: {data.Counts.PartiallyAllocatedCount}");
             ui.DrawDivider();
-            Console.WriteLine("[D] Drill into employee details     [B] Back");
+            Console.WriteLine("[D] Drill into resourceProfile details     [B] Back");
             var action = ui.Prompt("Action").ToUpperInvariant();
 
             if (action == "D")
-                await DrillDownAsync(dashboard, ct);
+                await DrillDownAsync(data, ct);
         }
         catch (ApiException ex) { ui.WriteError(ex.Message); ui.Pause(); }
     }
 
-    private async Task DrillDownAsync(Models.ResourceDashboard dashboard, CancellationToken ct)
+    private async Task DrillDownAsync(Models.ResourceDashboard data, CancellationToken ct)
     {
-        var employeeId = ui.PromptLong("Enter Employee ID");
-        var detail = dashboard.DrillDown.FirstOrDefault(d => d.Id == employeeId);
+        var employeeId = ui.PromptLong("Enter resourceProfile ID");
+        var detail = data.DrillDown.FirstOrDefault(d => d.Id == employeeId);
         if (detail is null)
         {
             try
             {
-                var employee = await api.GetEmployeeAsync(employeeId, ct);
-                var allocations = await api.ListAllocationsByEmployeeAsync(employeeId, ct);
+                var resourceProfile = await employees.GetAsync(employeeId, ct);
+                var allocationList = await allocations.ListByEmployeeAsync(employeeId, ct);
                 ui.ClearScreen();
-                ui.DrawSection(employee.FullName);
-                Console.WriteLine($"Department     : {employee.Department}");
-                Console.WriteLine($"Current Status : {employee.Status}");
-                Console.WriteLine($"Profile Skills : {string.Join(", ", employee.Skills.Select(s => s.Name))}");
+                ui.DrawSection(resourceProfile.FullName);
+                Console.WriteLine($"Department     : {resourceProfile.Department}");
+                Console.WriteLine($"Current Status : {resourceProfile.Status}");
+                Console.WriteLine($"Profile Skills : {string.Join(", ", resourceProfile.Skills.Select(s => s.Name))}");
                 Console.WriteLine();
                 Console.WriteLine("Active Allocations:");
                 ui.PrintTable(
                     ["Project", "%", "From", "To"],
-                    allocations.Where(a => a.EndedAt is null).Select(a => new List<string>
+                    allocationList.Where(a => a.EndedAt is null).Select(a => new List<string>
                     {
                         a.ProjectName, $"{a.UtilisationPercentage}%", ui.FormatDate(a.FromDate), ui.FormatDate(a.ToDate)
                     }));

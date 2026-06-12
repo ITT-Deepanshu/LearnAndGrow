@@ -12,8 +12,6 @@ public class Result
     public string? Error { get; }
     public bool IsFailure => !IsSuccess;
 
-    public static Result Success() => new(true, null);
-    public static Result Failure(string error) => new(false, error);
     public static Result<T> Success<T>(T value) => Result<T>.Success(value);
     public static Result<T> Failure<T>(string error) => Result<T>.Failure(error);
 }
@@ -30,5 +28,5 @@ public class Result<T> : Result
         : throw new InvalidOperationException("Cannot access value of a failed result.");
 
     public static Result<T> Success(T value) => new(value);
-    public new static Result<T> Failure(string error) => new(error);
+    public static Result<T> Failure(string error) => new(error);
 }

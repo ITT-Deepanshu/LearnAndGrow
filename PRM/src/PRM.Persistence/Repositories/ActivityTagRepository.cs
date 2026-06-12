@@ -8,7 +8,4 @@ public class ActivityTagRepository(PrmDbContext context) : IActivityTagRepositor
 {
     public async Task<IReadOnlyList<ActivityTag>> ListAllAsync(CancellationToken cancellationToken = default) =>
         await context.ActivityTags.OrderBy(t => t.Id).ToListAsync(cancellationToken);
-
-    public async Task<ActivityTag?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
-        await context.ActivityTags.FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
 }
