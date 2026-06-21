@@ -8,33 +8,43 @@ public sealed class TeamSkillMatchView(AiApi ai, ConsoleUi ui)
 {
     public async Task RunAsync(CancellationToken ct = default)
     {
-        ui.ClearScreen();
-        ui.DrawBox("TEAM SKILL MATCH");
-
-        Console.WriteLine("Describe the team you need in plain English.");
-        Console.WriteLine("Example: i need a team of two backend engineers, one devops engineer and one frontend engineer");
-        Console.WriteLine();
-        var requirement = ui.Prompt("> ");
-        if (string.IsNullOrWhiteSpace(requirement))
+        while (true)
         {
-            ui.WriteError("Requirement cannot be empty.");
-            ui.Pause();
-            return;
-        }
-
-        try
-        {
+            ui.ClearScreen();
+            ui.DrawBox("TEAM BUILDER WITH SKILL MATCH");
+            Console.WriteLine("Define your whole project team in one request.");
+            Console.WriteLine("The system loads bench data first, then asks the AI to match every role at once.");
             Console.WriteLine();
-            Console.WriteLine("Searching... (loading bench data and matching team)");
-            var result = await ai.TeamSkillMatchAsync(requirement, ct);
-            PrintResult(result);
-        }
-        catch (ApiException ex)
-        {
-            ui.WriteError(ex.Message);
-        }
+            Console.WriteLine("Example:");
+            Console.WriteLine("  I have a new project where I need 2 backend developers,");
+            Console.WriteLine("  1 frontend developer and 1 QA.");
+            Console.WriteLine();
+            Console.WriteLine("Enter your team requirement (or B to go back):");
+            var requirement = ui.Prompt("> ");
+            if (requirement.Equals("B", StringComparison.OrdinalIgnoreCase))
+                return;
 
-        ui.Pause();
+            if (string.IsNullOrWhiteSpace(requirement))
+            {
+                ui.WriteError("Requirement cannot be empty.");
+                ui.Pause();
+                continue;
+            }
+
+            try
+            {
+                Console.WriteLine();
+                Console.WriteLine("Searching... (loading employee data, matching team in one pass)");
+                var result = await ai.TeamSkillMatchAsync(requirement, ct);
+                PrintResult(result);
+            }
+            catch (ApiException ex)
+            {
+                ui.WriteError(ex.Message);
+            }
+
+            ui.Pause();
+        }
     }
 
     private void PrintResult(TeamSkillMatchResult result)
@@ -87,9 +97,6 @@ public sealed class TeamSkillMatchView(AiApi ai, ConsoleUi ui)
         }
 
         if (!string.IsNullOrWhiteSpace(result.Note))
-        {
             Console.WriteLine($"Note: {result.Note}");
-            Console.WriteLine();
-        }
     }
 }

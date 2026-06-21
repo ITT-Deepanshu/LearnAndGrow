@@ -11,7 +11,7 @@ public class ResourceProfileRepository(PrmDbContext context) : IResourceProfileR
         await context.ResourceProfiles
             .Include(e => e.User).ThenInclude(u => u.Role)
             .Include(e => e.Manager).ThenInclude(m => m!.ResourceProfile)
-            .Include(e => e.Allocations)
+            .Include(e => e.Allocations).ThenInclude(a => a.Project)
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
 
     public async Task<ResourceProfile?> GetByIdWithSkillsAsync(long id, CancellationToken cancellationToken = default) =>
@@ -19,7 +19,7 @@ public class ResourceProfileRepository(PrmDbContext context) : IResourceProfileR
             .Include(e => e.User).ThenInclude(u => u.Role)
             .Include(e => e.Manager).ThenInclude(m => m!.ResourceProfile)
             .Include(e => e.Skills)
-            .Include(e => e.Allocations)
+            .Include(e => e.Allocations).ThenInclude(a => a.Project)
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
 
     public async Task<ResourceProfile?> GetByUserIdAsync(long userId, CancellationToken cancellationToken = default) =>
@@ -37,7 +37,7 @@ public class ResourceProfileRepository(PrmDbContext context) : IResourceProfileR
             .Include(e => e.User).ThenInclude(u => u.Role)
             .Include(e => e.Manager).ThenInclude(m => m!.ResourceProfile)
             .Include(e => e.Skills)
-            .Include(e => e.Allocations)
+            .Include(e => e.Allocations).ThenInclude(a => a.Project)
             .AsQueryable();
 
         if (status.HasValue)

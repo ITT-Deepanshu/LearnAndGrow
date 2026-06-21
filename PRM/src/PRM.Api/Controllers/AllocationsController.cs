@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PRM.Api.Authorization;
 using PRM.Application.Allocations;
+using PRM.Domain.Constants;
 
 namespace PRM.Api.Controllers;
 
@@ -13,7 +15,7 @@ public sealed class AllocationsController(IAllocationService allocationService) 
 {
     /// <summary>Create a resource-to-project allocation with utilisation % and date range. Manager only.</summary>
     [HttpPost]
-    [Authorize(Roles = "manager")]
+    [RequirePermission(RolePermissions.AllocationsManage)]
     public async Task<ActionResult<AllocationDto>> Create([FromBody] CreateAllocationDto dto, CancellationToken cancellationToken)
     {
         var result = await allocationService.CreateAllocationAsync(dto, cancellationToken);
@@ -23,7 +25,7 @@ public sealed class AllocationsController(IAllocationService allocationService) 
 
     /// <summary>End an active allocation as of today. Manager only.</summary>
     [HttpPost("{id:long}/end")]
-    [Authorize(Roles = "manager")]
+    [RequirePermission(RolePermissions.AllocationsManage)]
     public async Task<IActionResult> End(long id, CancellationToken cancellationToken)
     {
         await allocationService.EndAllocationAsync(id, cancellationToken);
@@ -32,7 +34,7 @@ public sealed class AllocationsController(IAllocationService allocationService) 
 
     /// <summary>List active allocations with optional employee or project filters. Admin only.</summary>
     [HttpGet]
-    [Authorize(Roles = "admin")]
+    [RequirePermission(RolePermissions.AllocationsViewAll)]
     public async Task<ActionResult<IReadOnlyList<AllocationListItemDto>>> List(
         [FromQuery] long? employeeId,
         [FromQuery] long? projectId,
@@ -41,19 +43,22 @@ public sealed class AllocationsController(IAllocationService allocationService) 
 
     /// <summary>List active allocations on a project. Admin and manager.</summary>
     [HttpGet("by-project/{projectId:long}")]
-    [Authorize(Roles = "admin,manager")]
+    [RequireAnyPermission(RolePermissions.AllocationsViewAll, RolePermissions.AllocationsManage)]
     public async Task<ActionResult<IReadOnlyList<AllocationDto>>> ListByProject(long projectId, CancellationToken cancellationToken) =>
         Ok(await allocationService.ListAllocationsByProjectAsync(projectId, cancellationToken));
 
     /// <summary>List the logged-in resource's own active allocations.</summary>
     [HttpGet("my")]
-    [Authorize(Roles = "resource")]
+    [RequirePermission(RolePermissions.AllocationsViewOwn)]
     public async Task<ActionResult<IReadOnlyList<AllocationDto>>> ListMy(CancellationToken cancellationToken) =>
         Ok(await allocationService.ListMyAllocationsAsync(cancellationToken));
 
     /// <summary>List active allocations for an employee. Resource may only query their own profile.</summary>
     [HttpGet("by-employee/{employeeId:long}")]
-    [Authorize(Roles = "admin,manager,resource")]
+    [RequireAnyPermission(
+        RolePermissions.AllocationsViewAll,
+        RolePermissions.AllocationsManage,
+        RolePermissions.AllocationsViewOwn)]
     public async Task<ActionResult<IReadOnlyList<AllocationDto>>> ListByEmployee(long employeeId, CancellationToken cancellationToken) =>
         Ok(await allocationService.ListAllocationsByEmployeeAsync(employeeId, cancellationToken));
 }

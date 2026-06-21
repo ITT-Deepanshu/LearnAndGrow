@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using PRM.Application.Interfaces.Common;
+using PRM.Domain.Constants;
 using PRM.Domain.Enums;
 
 namespace PRM.Api.Services;
@@ -37,7 +38,26 @@ public sealed class HttpCurrentUser(IHttpContextAccessor httpContextAccessor) : 
         }
     }
 
+    public IReadOnlySet<string> Permissions
+    {
+        get
+        {
+            var user = httpContextAccessor.HttpContext?.User;
+            if (user is null)
+                return EmptyPermissions;
+
+            return user.FindAll(PrmClaimTypes.Permission)
+                .Select(c => c.Value)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        }
+    }
+
     public bool IsAuthenticated => httpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated ?? false;
+
+    public bool HasPermission(string permission) =>
+        !string.IsNullOrWhiteSpace(permission) && Permissions.Contains(permission);
+
+    private static readonly HashSet<string> EmptyPermissions = new(StringComparer.OrdinalIgnoreCase);
 
     private string? FindClaimValue(params string[] claimTypes)
     {

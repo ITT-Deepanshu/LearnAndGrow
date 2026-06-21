@@ -3,8 +3,10 @@ using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using PRM.Application.Interfaces.Common;
 using PRM.Application.Interfaces.Persistence;
+using PRM.Application.Notifications;
 using PRM.Domain.Entities;
 using PRM.Domain.Enums;
+using PRM.Domain.Helpers;
 using PRM.Infrastructure.Scheduler;
 using PRM.UnitTests.Common;
 
@@ -19,6 +21,7 @@ public class PrmBackgroundJobRunnerTests
     private readonly IProjectRepository _projects = Substitute.For<IProjectRepository>();
     private readonly ITimesheetRepository _timesheets = Substitute.For<ITimesheetRepository>();
     private readonly ISystemConfigRepository _config = Substitute.For<ISystemConfigRepository>();
+    private readonly INotificationService _notifications = Substitute.For<INotificationService>();
 
     public PrmBackgroundJobRunnerTests()
     {
@@ -37,6 +40,7 @@ public class PrmBackgroundJobRunnerTests
         _projects,
         _timesheets,
         _config,
+        _notifications,
         NullLogger<PrmBackgroundJobRunner>.Instance);
 
     [Fact]
@@ -52,7 +56,19 @@ public class PrmBackgroundJobRunnerTests
         await CreateRunner().RunScheduledJobsAsync(CancellationToken.None);
 
         _timesheets.Received(1).Add(Arg.Is<Timesheet>(t => t.Status == TimesheetStatus.Missed));
-        await _uow.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        employee.MissedTimesheetWeekStart.Should().Be(WeekHelper.GetLastCompletedWeekMonday(TestFixtures.FixedToday));
+        await _uow.Received().SaveChangesAsync(Arg.Any<CancellationToken>());
+        _uow.Received(1).ClearChangeTracker();
+    }
+
+    [Fact]
+    public async Task RunScheduledJobsAsync_InvokesNotificationProcessing()
+    {
+        await CreateRunner().RunScheduledJobsAsync(CancellationToken.None);
+
+        await _notifications.Received(1).ProcessTimesheetComplianceEmailsAsync(Arg.Any<CancellationToken>());
+        await _notifications.Received(1).ProcessProjectAtRiskEmailsAsync(Arg.Any<CancellationToken>());
+        _uow.Received(1).ClearChangeTracker();
     }
 
     [Fact]

@@ -25,6 +25,7 @@ public class SystemConfigServiceTests
     {
         _current.UserId.Returns(1L);
         _current.Role.Returns(UserRole.Admin);
+        TestFixtures.SetupPermissions(_current, UserRole.Admin);
         _clock.UtcNow.Returns(TestFixtures.FixedUtc);
         _config.GetAsync(Arg.Any<CancellationToken>())
             .Returns(SystemConfiguration.CreateDefault(1, TestFixtures.FixedUtc));
@@ -54,6 +55,7 @@ public class SystemConfigServiceTests
     public async Task UpdateSystemConfigAsync_ThrowsWhenNotAdmin()
     {
         _current.Role.Returns(UserRole.Manager);
+        TestFixtures.SetupPermissions(_current, UserRole.Manager);
         var dto = new UpdateSystemConfigDto(AiProviderType.Gemma, null, 60, 45);
 
         var act = () => CreateService().UpdateSystemConfigAsync(dto, CancellationToken.None);

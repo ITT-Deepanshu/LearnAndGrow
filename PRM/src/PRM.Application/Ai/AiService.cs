@@ -93,24 +93,34 @@ public sealed class AiService(
         if (string.IsNullOrWhiteSpace(requirement))
             throw new ValidationException("Requirement text is required.");
 
+        var today = clock.Today;
+
         var bench = await employeeRepository.ListAsync(ResourceProfileStatus.Bench, null, null, cancellationToken);
-        var candidates = bench
+        var partial = await employeeRepository.ListAsync(ResourceProfileStatus.PartiallyAllocated, null, null, cancellationToken);
+        var allocated = await employeeRepository.ListAsync(ResourceProfileStatus.Allocated, null, null, cancellationToken);
+
+        var benchCandidates = bench
             .Where(AllocationEligibility.IsEligibleActiveResource)
             .ToList();
 
-        var contexts = candidates
+        var benchContexts = benchCandidates
             .Select(BuildBenchEmployeeContext)
             .ToList();
 
+        var allocatedContexts = partial.Concat(allocated)
+            .Where(AllocationEligibility.IsEligibleActiveResource)
+            .Select(p => BuildAllocatedEmployeeContext(p, today))
+            .ToList();
+
         string? note = null;
-        if (contexts.Count == 0)
+        if (benchContexts.Count == 0)
             note = "No active resource-role employees are currently on bench.";
 
         var aiResponse = await aiOrchestrator.MatchTeamAsync(
-            new TeamSkillMatchAiRequest(requirement.Trim(), contexts),
+            new TeamSkillMatchAiRequest(requirement.Trim(), benchContexts, allocatedContexts),
             cancellationToken);
 
-        var lookup = candidates.ToDictionary(c => c.Id);
+        var lookup = benchCandidates.ToDictionary(c => c.Id);
 
         var teamDefined = aiResponse.TeamDefined
             .Select(r => new TeamRoleDefinitionDto(
@@ -207,6 +217,20 @@ public sealed class AiService(
             profile.FullName,
             GetManagerName(profile),
             profile.Skills.Select(s => $"{s.Name} ({s.Proficiency})").ToList());
+
+    private static AllocatedEmployeeAiContext BuildAllocatedEmployeeContext(ResourceProfile profile, DateOnly today)
+    {
+        var activeAllocations = profile.Allocations
+            .Where(a => a.IsActiveOn(today))
+            .Select(a => $"{a.Project.Name} ({a.UtilisationPercentage}%, until {a.ToDate:yyyy-MM-dd})")
+            .ToList();
+
+        return new AllocatedEmployeeAiContext(
+            profile.Id,
+            profile.FullName,
+            profile.Skills.Select(s => $"{s.Name} ({s.Proficiency})").ToList(),
+            activeAllocations);
+    }
 
     private static string GetManagerName(ResourceProfile profile) =>
         profile.Manager?.ResourceProfile?.FullName ?? "Unassigned";

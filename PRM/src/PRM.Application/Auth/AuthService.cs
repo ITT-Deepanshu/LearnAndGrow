@@ -34,7 +34,8 @@ public sealed class AuthService(
         }
 
         user.RecordLogin(clock.UtcNow);
-        var accessToken = tokenService.GenerateAccessToken(user);
+        var permissions = UserPermissionMapper.GetPermissions(user);
+        var accessToken = tokenService.GenerateAccessToken(user, permissions);
         auditLogRepository.Add(AuditLog.Create(user.Id, "LOGIN_SUCCESS", nameof(User), user.Id, null, clock.UtcNow));
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -43,7 +44,8 @@ public sealed class AuthService(
             user.RequiresPasswordChange,
             user.Role.RoleName.ToUpperInvariant(),
             user.ResourceProfile?.FullName ?? user.Username,
-            user.ResourceProfile?.Id));
+            user.ResourceProfile?.Id,
+            permissions));
     }
 
     public async Task LogoutAsync(CancellationToken cancellationToken = default)
@@ -82,12 +84,15 @@ public sealed class AuthService(
         var refreshed = await userRepository.GetByIdWithDetailsAsync(user.Id, cancellationToken)
             ?? throw new NotFoundException("User not found.");
 
+        var permissions = UserPermissionMapper.GetPermissions(refreshed);
+
         return new LoginResultDto(
-            tokenService.GenerateAccessToken(refreshed),
+            tokenService.GenerateAccessToken(refreshed, permissions),
             refreshed.RequiresPasswordChange,
             refreshed.Role.RoleName.ToUpperInvariant(),
             refreshed.ResourceProfile?.FullName ?? refreshed.Username,
-            refreshed.ResourceProfile?.Id);
+            refreshed.ResourceProfile?.Id,
+            permissions);
     }
 
     public async Task<MeDto> GetMeAsync(CancellationToken cancellationToken = default)
@@ -105,7 +110,8 @@ public sealed class AuthService(
             UserDisplayHelper.GetDisplayName(user),
             user.Role.RoleName.ToUpperInvariant(),
             user.RequiresPasswordChange,
-            user.ResourceProfile?.Id);
+            user.ResourceProfile?.Id,
+            UserPermissionMapper.GetPermissions(user));
     }
 
     private async Task TryRecordLoginFailureAsync(User user, CancellationToken cancellationToken)

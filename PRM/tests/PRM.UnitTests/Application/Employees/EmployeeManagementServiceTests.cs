@@ -22,6 +22,7 @@ public class EmployeeManagementServiceTests
     {
         _current.UserId.Returns(1L);
         _current.Role.Returns(UserRole.Admin);
+        TestFixtures.SetupPermissions(_current, UserRole.Admin);
         _clock.UtcNow.Returns(TestFixtures.FixedUtc);
     }
 
@@ -43,6 +44,7 @@ public class EmployeeManagementServiceTests
     public async Task ListEmployeesAsync_ThrowsForResourceRole()
     {
         _current.Role.Returns(UserRole.Resource);
+        TestFixtures.SetupPermissions(_current, UserRole.Resource);
 
         var act = () => CreateService().ListEmployeesAsync(null, null, CancellationToken.None);
         await act.Should().ThrowAsync<ForbiddenException>();

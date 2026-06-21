@@ -26,6 +26,7 @@ public class TimesheetReminderServiceTests
     {
         _current.UserId.Returns(2L);
         _current.Role.Returns(UserRole.Resource);
+        TestFixtures.SetupPermissions(_current, UserRole.Resource);
         _clock.UtcNow.Returns(TestFixtures.FixedUtc);
         _clock.Today.Returns(TestFixtures.FixedToday);
 

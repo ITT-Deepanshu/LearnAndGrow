@@ -1,13 +1,16 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PRM.Api.Authorization;
 using PRM.Application.Ai;
+using PRM.Domain.Constants;
 
 namespace PRM.Api.Controllers;
 
 /// <summary>Gemma-powered resource matching and project risk summaries. Manager only.</summary>
 [ApiController]
 [Route("api/v1/ai")]
-[Authorize(Roles = "manager")]
+[Authorize]
+[RequirePermission(RolePermissions.AiUse)]
 [Tags("AI")]
 public sealed class AiController(IAiService aiService) : ControllerBase
 {

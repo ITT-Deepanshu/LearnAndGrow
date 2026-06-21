@@ -24,6 +24,7 @@ public class EndAllocationServiceTests
     {
         _current.UserId.Returns(1L);
         _current.Role.Returns(UserRole.Manager);
+        TestFixtures.SetupPermissions(_current, UserRole.Manager);
         _clock.UtcNow.Returns(TestFixtures.FixedUtc);
         _clock.Today.Returns(TestFixtures.FixedToday);
     }
@@ -63,6 +64,7 @@ public class EndAllocationServiceTests
     public async Task ListAllocationsAsync_ReturnsAllocationsForAdmin()
     {
         _current.Role.Returns(UserRole.Admin);
+        TestFixtures.SetupPermissions(_current, UserRole.Admin);
         var allocation = TestFixtures.CreateAllocation(10, 201, 50, new DateOnly(2026, 5, 1), new DateOnly(2026, 6, 30), 501);
         TestFixtures.SetProperty(allocation, "Project", TestFixtures.CreateProject(id: 201));
         TestFixtures.SetProperty(allocation, "ResourceProfile", TestFixtures.CreateResourceProfile(id: 10));

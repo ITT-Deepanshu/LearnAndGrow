@@ -153,6 +153,9 @@ namespace PRM.Persistence.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
+                    b.Property<DateTime?>("AtRiskNotificationSentAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -301,6 +304,9 @@ namespace PRM.Persistence.Migrations
                     b.Property<long?>("ManagerId")
                         .HasColumnType("bigint");
 
+                    b.Property<DateOnly?>("MissedTimesheetWeekStart")
+                        .HasColumnType("date");
+
                     b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("datetime2");
 
@@ -315,6 +321,16 @@ namespace PRM.Persistence.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
+
+                    b.Property<int>("TimesheetReminderCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<bool>("TimesheetSubmissionFrozen")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<long>("UserId")
                         .HasColumnType("bigint");

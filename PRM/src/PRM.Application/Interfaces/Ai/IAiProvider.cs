@@ -31,13 +31,20 @@ public sealed record RankedCandidateAiResult(
 
 public sealed record TeamSkillMatchAiRequest(
     string RequirementText,
-    IReadOnlyList<BenchEmployeeAiContext> BenchEmployees);
+    IReadOnlyList<BenchEmployeeAiContext> BenchEmployees,
+    IReadOnlyList<AllocatedEmployeeAiContext> AllocatedEmployees);
 
 public sealed record BenchEmployeeAiContext(
     long ResourceProfileId,
     string Name,
     string ManagerName,
     IReadOnlyList<string> Skills);
+
+public sealed record AllocatedEmployeeAiContext(
+    long ResourceProfileId,
+    string Name,
+    IReadOnlyList<string> Skills,
+    IReadOnlyList<string> ActiveAllocations);
 
 public sealed record TeamSkillMatchAiResponse(
     IReadOnlyList<TeamRoleDefinitionAiResult> TeamDefined,

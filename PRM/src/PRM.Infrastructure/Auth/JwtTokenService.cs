@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using PRM.Application.Interfaces.Auth;
+using PRM.Domain.Constants;
 using PRM.Domain.Entities;
 
 namespace PRM.Infrastructure.Auth;
@@ -12,7 +13,7 @@ public sealed class JwtTokenService(IOptions<JwtSettings> options) : ITokenServi
 {
     private readonly JwtSettings _settings = options.Value;
 
-    public string GenerateAccessToken(User user)
+    public string GenerateAccessToken(User user, IReadOnlyList<string> permissions)
     {
         var claims = new List<Claim>
         {
@@ -21,6 +22,9 @@ public sealed class JwtTokenService(IOptions<JwtSettings> options) : ITokenServi
             new(ClaimTypes.Role, user.Role.RoleName),
             new("requires_password_change", user.RequiresPasswordChange.ToString().ToLowerInvariant())
         };
+
+        foreach (var permission in permissions.Distinct(StringComparer.OrdinalIgnoreCase))
+            claims.Add(new Claim(PrmClaimTypes.Permission, permission));
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Secret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

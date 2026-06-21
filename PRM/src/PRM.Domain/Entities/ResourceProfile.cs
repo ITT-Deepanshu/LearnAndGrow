@@ -18,6 +18,9 @@ public class ResourceProfile : AuditableEntity
     public ResourceProfileStatus Status { get; private set; } = ResourceProfileStatus.Bench;
     public long? ManagerId { get; private set; }
     public DateTime? JoinedAt { get; private set; }
+    public bool TimesheetSubmissionFrozen { get; private set; }
+    public int TimesheetReminderCount { get; private set; }
+    public DateOnly? MissedTimesheetWeekStart { get; private set; }
 
     public User User { get; private set; } = null!;
     public User? Manager { get; private set; }
@@ -71,16 +74,24 @@ public class ResourceProfile : AuditableEntity
         SetModified(actorId, utcNow);
     }
 
-    public void RecomputeStatus(decimal totalUtilisation)
+    public bool RecomputeStatus(decimal totalUtilisation, long actorId = 0, DateTime? utcNow = null)
     {
-        if (Status == ResourceProfileStatus.Inactive) return;
+        if (Status == ResourceProfileStatus.Inactive) return false;
 
-        Status = totalUtilisation switch
+        var newStatus = totalUtilisation switch
         {
             <= 0 => ResourceProfileStatus.Bench,
             < 100 => ResourceProfileStatus.PartiallyAllocated,
             _ => ResourceProfileStatus.Allocated
         };
+
+        if (Status == newStatus) return false;
+
+        Status = newStatus;
+        if (utcNow.HasValue)
+            SetModified(actorId, utcNow.Value);
+
+        return true;
     }
 
     public ResourceProfileSkill AddSkill(string name, SkillCategory category, SkillProficiency proficiency, long actorId, DateTime utcNow)
@@ -105,5 +116,42 @@ public class ResourceProfile : AuditableEntity
         var skill = _skills.FirstOrDefault(s => s.Id == skillId)
             ?? throw new NotFoundException("Skill not found.");
         _skills.Remove(skill);
+    }
+
+    public void SyncMissedTimesheetWeek(DateOnly weekStart, long actorId, DateTime utcNow)
+    {
+        if (MissedTimesheetWeekStart == weekStart)
+            return;
+
+        MissedTimesheetWeekStart = weekStart;
+        TimesheetReminderCount = 0;
+        SetModified(actorId, utcNow);
+    }
+
+    public void RecordTimesheetReminderSent(long actorId, DateTime utcNow)
+    {
+        TimesheetReminderCount++;
+        SetModified(actorId, utcNow);
+    }
+
+    public void FreezeTimesheetSubmission(long actorId, DateTime utcNow)
+    {
+        TimesheetSubmissionFrozen = true;
+        SetModified(actorId, utcNow);
+    }
+
+    public void RestoreTimesheetSubmission(long actorId, DateTime utcNow)
+    {
+        TimesheetSubmissionFrozen = false;
+        TimesheetReminderCount = 0;
+        SetModified(actorId, utcNow);
+    }
+
+    public void ClearTimesheetCompliance(long actorId, DateTime utcNow)
+    {
+        TimesheetSubmissionFrozen = false;
+        TimesheetReminderCount = 0;
+        MissedTimesheetWeekStart = null;
+        SetModified(actorId, utcNow);
     }
 }

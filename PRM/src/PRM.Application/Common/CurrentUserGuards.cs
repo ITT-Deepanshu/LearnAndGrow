@@ -1,7 +1,7 @@
 using PRM.Application.Interfaces.Common;
 using PRM.Domain.Enums;
 using PRM.Domain.Exceptions;
-
+using PRM.Domain.Constants;
 namespace PRM.Application.Common;
 
 /// <summary>
@@ -23,14 +23,50 @@ public static class CurrentUserGuards
             throw new ForbiddenException("Insufficient permissions.");
     }
 
-    public static void EnsureAdmin(ICurrentUser user) =>
+    public static void EnsurePermission(ICurrentUser user, string permission)
+    {
+        EnsureAuthenticated(user);
+        if (!user.HasPermission(permission))
+            throw new ForbiddenException("Insufficient permissions.");
+    }
+
+    public static void EnsureAnyPermission(ICurrentUser user, params string[] permissions)
+    {
+        EnsureAuthenticated(user);
+        if (permissions.Length == 0 || !permissions.Any(user.HasPermission))
+            throw new ForbiddenException("Insufficient permissions.");
+    }
+
+    public static void EnsureAdmin(ICurrentUser user)
+    {
         EnsureRole(user, UserRole.Admin);
+        EnsureAnyPermission(user,
+            RolePermissions.UsersManage,
+            RolePermissions.ResourceProfilesManage,
+            RolePermissions.ProjectsManage,
+            RolePermissions.AllocationsViewAll,
+            RolePermissions.SystemManage);
+    }
 
-    public static void EnsureManager(ICurrentUser user) =>
+    public static void EnsureManager(ICurrentUser user)
+    {
         EnsureRole(user, UserRole.Manager);
+        EnsureAnyPermission(user,
+            RolePermissions.DashboardView,
+            RolePermissions.AllocationsManage,
+            RolePermissions.ProjectsViewOwn,
+            RolePermissions.TimesheetsViewTeam,
+            RolePermissions.AiUse);
+    }
 
-    public static void EnsureResource(ICurrentUser user) =>
+    public static void EnsureResource(ICurrentUser user)
+    {
         EnsureRole(user, UserRole.Resource);
+        EnsureAnyPermission(user,
+            RolePermissions.TimesheetsSubmit,
+            RolePermissions.TimesheetsViewOwn,
+            RolePermissions.AllocationsViewOwn);
+    }
 
     public static long ActorId(ICurrentUser user)
     {

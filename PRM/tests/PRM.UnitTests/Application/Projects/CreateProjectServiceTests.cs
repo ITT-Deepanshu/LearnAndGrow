@@ -25,6 +25,7 @@ public class CreateProjectServiceTests
     {
         _current.UserId.Returns(1L);
         _current.Role.Returns(UserRole.Admin);
+        TestFixtures.SetupPermissions(_current, UserRole.Admin);
         _clock.UtcNow.Returns(TestFixtures.FixedUtc);
         _projects.ExistsByNameAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
         _users.GetByIdAsync(5, Arg.Any<CancellationToken>()).Returns(TestFixtures.CreateUser(UserRole.Manager, id: 5));

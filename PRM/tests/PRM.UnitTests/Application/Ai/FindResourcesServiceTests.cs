@@ -28,6 +28,7 @@ public class FindResourcesServiceTests
     {
         _current.UserId.Returns(1L);
         _current.Role.Returns(UserRole.Manager);
+        TestFixtures.SetupPermissions(_current, UserRole.Manager);
         _clock.Today.Returns(TestFixtures.FixedToday);
         _projects.GetByIdAsync(201, Arg.Any<CancellationToken>())
             .Returns(TestFixtures.CreateProject(managerId: 1, id: 201));

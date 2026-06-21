@@ -16,6 +16,8 @@ using PRM.Application.Dashboard;
 
 using PRM.Application.Employees;
 
+using PRM.Application.Notifications;
+
 using PRM.Application.Projects;
 
 using PRM.Application.SystemConfig;
@@ -67,7 +69,9 @@ public static class DependencyInjection
 
         services.AddScoped<ISystemConfigService, SystemConfigService>();
 
-
+        services.AddScoped<ITimesheetComplianceNotificationProcessor, TimesheetComplianceNotificationProcessor>();
+        services.AddScoped<IProjectAtRiskNotificationProcessor, ProjectAtRiskNotificationProcessor>();
+        services.AddScoped<INotificationService, NotificationService>();
 
         return services;
 

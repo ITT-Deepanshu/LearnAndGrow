@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PRM.Api.Authorization;
 using PRM.Application.Dashboard;
+using PRM.Domain.Constants;
 
 namespace PRM.Api.Controllers;
 
@@ -13,7 +15,7 @@ public sealed class DashboardController(IDashboardService dashboardService) : Co
 {
     /// <summary>Resource utilisation dashboard: bench, partially allocated, fully allocated, and drill-down. Manager only.</summary>
     [HttpGet("resources")]
-    [Authorize(Roles = "manager")]
+    [RequirePermission(RolePermissions.DashboardView)]
     public async Task<IActionResult> GetResources(CancellationToken cancellationToken) =>
         Ok(await dashboardService.GetResourceDashboardAsync(cancellationToken));
 }

@@ -27,4 +27,7 @@ public sealed class TimesheetsApi(PrmHttpClient http)
         var query = PrmHttpClient.BuildQuery(("weekStart", weekStart.ToString("yyyy-MM-dd")));
         return http.GetAsync<IReadOnlyList<TeamTimesheetRow>>($"api/v1/timesheets/team{query}", ct);
     }
+
+    public Task RestoreSubmissionAsync(long resourceProfileId, CancellationToken ct = default) =>
+        http.PostAsync($"api/v1/timesheets/team/{resourceProfileId}/restore-submission", new { }, ct);
 }

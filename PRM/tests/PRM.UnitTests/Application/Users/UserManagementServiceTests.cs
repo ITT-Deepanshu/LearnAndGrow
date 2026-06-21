@@ -24,6 +24,8 @@ public class UserManagementServiceTests
     public UserManagementServiceTests()
     {
         _current.UserId.Returns(1L);
+        _current.Role.Returns(UserRole.Admin);
+        TestFixtures.SetupPermissions(_current, UserRole.Admin);
         _clock.UtcNow.Returns(TestFixtures.FixedUtc);
         _hasher.Hash(Arg.Any<string>()).Returns("hashed");
     }

@@ -12,9 +12,9 @@ public sealed class AiAssistantView(ProjectsApi projects, AiApi ai, ConsoleUi ui
         {
             ui.ClearScreen();
             ui.DrawBox("AI ASSISTANT");
-            Console.WriteLine("1. Skill Match    — Find best employees for a project requirement");
-            Console.WriteLine("2. Team Skill Match — Define a whole team from one request");
-            Console.WriteLine("3. Risk Summary   — Get a health analysis for a project");
+            Console.WriteLine("1. Skill Match      — Find best employee for one role");
+            Console.WriteLine("2. Team Builder     — Same as manager menu option 5");
+            Console.WriteLine("3. Risk Summary     — Get a health analysis for a project");
             Console.WriteLine("4. Back");
             Console.WriteLine();
 

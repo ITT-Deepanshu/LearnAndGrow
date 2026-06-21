@@ -29,4 +29,18 @@ public class WeekHelperTests
         WeekHelper.IsFutureWeek(new DateOnly(2026, 5, 18), today).Should().BeTrue();
         WeekHelper.IsFutureWeek(new DateOnly(2026, 5, 11), today).Should().BeFalse();
     }
+
+    [Fact]
+    public void CountWorkingDaysAfter_ReturnsZeroBeforeDeadlinePasses()
+    {
+        var periodEnd = new DateOnly(2026, 6, 7);
+        WeekHelper.CountWorkingDaysAfter(periodEnd, periodEnd).Should().Be(0);
+    }
+
+    [Fact]
+    public void CountWorkingDaysAfter_CountsWeekdaysAfterPeriodEnd()
+    {
+        var periodEnd = new DateOnly(2026, 6, 7);
+        WeekHelper.CountWorkingDaysAfter(periodEnd, new DateOnly(2026, 6, 10)).Should().Be(3);
+    }
 }

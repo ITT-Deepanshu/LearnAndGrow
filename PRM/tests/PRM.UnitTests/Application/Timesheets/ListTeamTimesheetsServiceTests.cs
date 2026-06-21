@@ -25,6 +25,7 @@ public class ListTeamTimesheetsServiceTests
     {
         _current.UserId.Returns(5L);
         _current.Role.Returns(UserRole.Manager);
+        TestFixtures.SetupPermissions(_current, UserRole.Manager);
         _clock.Today.Returns(new DateOnly(2026, 6, 10));
         _projects.ListAsync(5, Arg.Any<CancellationToken>()).Returns([TestFixtures.CreateProject(managerId: 5)]);
     }

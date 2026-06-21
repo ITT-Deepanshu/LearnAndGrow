@@ -28,6 +28,7 @@ public class TeamSkillMatchServiceTests
     {
         _current.UserId.Returns(1L);
         _current.Role.Returns(UserRole.Manager);
+        TestFixtures.SetupPermissions(_current, UserRole.Manager);
         _clock.Today.Returns(TestFixtures.FixedToday);
     }
 
@@ -101,7 +102,7 @@ public class TeamSkillMatchServiceTests
 
         result.Note.Should().Contain("on bench");
         await _ai.Received(1).MatchTeamAsync(
-            Arg.Is<TeamSkillMatchAiRequest>(r => r.BenchEmployees.Count == 0),
+            Arg.Is<TeamSkillMatchAiRequest>(r => r.BenchEmployees.Count == 0 && r.AllocatedEmployees.Count == 0),
             Arg.Any<CancellationToken>());
     }
 

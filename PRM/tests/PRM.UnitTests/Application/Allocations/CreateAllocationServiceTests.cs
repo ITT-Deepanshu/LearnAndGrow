@@ -25,6 +25,7 @@ public class CreateAllocationServiceTests
     {
         _current.UserId.Returns(1L);
         _current.Role.Returns(UserRole.Manager);
+        TestFixtures.SetupPermissions(_current, UserRole.Manager);
         _clock.UtcNow.Returns(TestFixtures.FixedUtc);
         _clock.Today.Returns(TestFixtures.FixedToday);
 

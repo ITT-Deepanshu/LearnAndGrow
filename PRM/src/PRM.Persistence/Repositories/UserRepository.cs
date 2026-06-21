@@ -11,13 +11,13 @@ public class UserRepository(PrmDbContext context) : IUserRepository
 
     public async Task<User?> GetByIdWithDetailsAsync(long id, CancellationToken cancellationToken = default) =>
         await context.Users
-            .Include(u => u.Role)
+            .Include(u => u.Role).ThenInclude(r => r.Permissions)
             .Include(u => u.ResourceProfile)
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
     public async Task<User?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default) =>
         await context.Users
-            .Include(u => u.Role)
+            .Include(u => u.Role).ThenInclude(r => r.Permissions)
             .Include(u => u.ResourceProfile)
             .FirstOrDefaultAsync(u => u.Username == username.ToLowerInvariant(), cancellationToken);
 

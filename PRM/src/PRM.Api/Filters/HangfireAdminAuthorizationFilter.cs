@@ -1,10 +1,11 @@
 using Hangfire.Dashboard;
+using PRM.Domain.Constants;
 
 namespace PRM.Api.Filters;
 
 /// <summary>
 /// Hangfire dashboard auth. In Development, the dashboard is open (browser has no JWT).
-/// Otherwise requires an authenticated admin (role claim is lowercase "admin").
+/// Otherwise requires an authenticated user with system.manage permission.
 /// </summary>
 public sealed class HangfireAdminAuthorizationFilter : IDashboardAuthorizationFilter
 {
@@ -19,6 +20,6 @@ public sealed class HangfireAdminAuthorizationFilter : IDashboardAuthorizationFi
             return true;
 
         return httpContext.User.Identity?.IsAuthenticated == true
-            && httpContext.User.IsInRole("admin");
+            && httpContext.User.HasClaim(PrmClaimTypes.Permission, RolePermissions.SystemManage);
     }
 }

@@ -90,6 +90,8 @@ public class ResourceProfileConfiguration : IEntityTypeConfiguration<ResourcePro
             .OnDelete(DeleteBehavior.Cascade);
         builder.HasMany(x => x.Allocations).WithOne(x => x.ResourceProfile).HasForeignKey(x => x.ResourceProfileId)
             .OnDelete(DeleteBehavior.Cascade);
+        builder.Property(x => x.TimesheetSubmissionFrozen).HasDefaultValue(false);
+        builder.Property(x => x.TimesheetReminderCount).HasDefaultValue(0);
     }
 }
 
@@ -122,6 +124,7 @@ public class ProjectConfiguration : IEntityTypeConfiguration<Project>
             .OnDelete(DeleteBehavior.Cascade);
         builder.HasMany(x => x.Allocations).WithOne(x => x.Project).HasForeignKey(x => x.ProjectId)
             .OnDelete(DeleteBehavior.Restrict);
+        builder.Property(x => x.AtRiskNotificationSentAt).IsRequired(false);
     }
 }
 

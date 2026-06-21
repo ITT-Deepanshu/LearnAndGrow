@@ -33,10 +33,12 @@ public sealed record TimesheetListItemDto(
     DateTime? SubmittedAt);
 
 public sealed record TeamTimesheetRowDto(
+    long ResourceProfileId,
     string EmployeeName,
     string ProjectName,
     decimal Hours,
-    string Status);
+    string Status,
+    bool SubmissionFrozen);
 
 public sealed record ActivityTagDto(int Id, string Name, bool IsCustom);
 

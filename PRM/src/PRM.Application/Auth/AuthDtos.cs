@@ -7,7 +7,8 @@ public sealed record LoginResultDto(
     bool RequiresPasswordChange,
     string Role,
     string FullName,
-    long? ResourceProfileId);
+    long? ResourceProfileId,
+    IReadOnlyList<string> Permissions);
 public sealed record MeDto(
     long Id,
     string Username,
@@ -15,4 +16,5 @@ public sealed record MeDto(
     string FullName,
     string Role,
     bool RequiresPasswordChange,
-    long? ResourceProfileId);
+    long? ResourceProfileId,
+    IReadOnlyList<string> Permissions);

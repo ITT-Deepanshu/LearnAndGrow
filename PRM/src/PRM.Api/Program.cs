@@ -9,6 +9,7 @@ using PRM.Application.Interfaces.Common;
 using PRM.Application.Interfaces.Persistence;
 using PRM.Application.Interfaces.Scheduling;
 using PRM.Infrastructure;
+using PRM.Infrastructure.Email;
 using PRM.Persistence;
 using PRM.Persistence.Seed;
 using Serilog;
@@ -34,6 +35,15 @@ builder.Services.AddPrmHangfireServer(builder.Environment);
 builder.Services.AddPrmAuthentication(builder.Configuration);
 
 var app = builder.Build();
+
+var emailSection = app.Configuration.GetSection(EmailOptions.SectionName);
+var smtpUsername = emailSection.GetSection("Smtp")["Username"];
+app.Logger.LogInformation(
+    "Email config loaded: Provider={Provider}, Enabled={Enabled}, FromEmail={FromEmail}, SmtpUser={SmtpUser}",
+    emailSection["Provider"],
+    emailSection["Enabled"],
+    emailSection["FromEmail"],
+    smtpUsername);
 
 using (var scope = app.Services.CreateScope())
 {

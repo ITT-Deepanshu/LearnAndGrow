@@ -32,6 +32,10 @@ public sealed class TimesheetService(
         if (resourceProfile.Status == ResourceProfileStatus.Inactive || !resourceProfile.User.IsActive)
             throw new BusinessRuleException("Resource profile is not active.");
 
+        if (resourceProfile.TimesheetSubmissionFrozen)
+            throw new BusinessRuleException(
+                "Timesheet submission is restricted. Please contact your reporting manager.");
+
         if (!WeekHelper.IsMonday(dto.WeekStart))
             throw new ValidationException("Week start must be a Monday.");
 
@@ -93,6 +97,7 @@ public sealed class TimesheetService(
                 clock.UtcNow);
 
             timesheetRepository.Add(timesheet);
+            resourceProfile.ClearTimesheetCompliance(currentUser.UserId.Value, clock.UtcNow);
             await unitOfWork.SaveChangesAsync(cancellationToken);
             await unitOfWork.CommitTransactionAsync(cancellationToken);
 
@@ -185,10 +190,12 @@ public sealed class TimesheetService(
                     continue;
 
                 rows.Add(new TeamTimesheetRowDto(
+                    allocation.ResourceProfileId,
                     employeeName,
                     projectName,
                     entry.Hours,
-                    TimesheetStatus.Submitted.ToString()));
+                    TimesheetStatus.Submitted.ToString(),
+                    allocation.ResourceProfile?.TimesheetSubmissionFrozen ?? false));
                 continue;
             }
 
@@ -196,10 +203,36 @@ public sealed class TimesheetService(
                 ? TimesheetStatus.Missed.ToString()
                 : "NOT_SUBMITTED";
 
-            rows.Add(new TeamTimesheetRowDto(employeeName, projectName, 0, status));
+            rows.Add(new TeamTimesheetRowDto(
+                allocation.ResourceProfileId,
+                employeeName,
+                projectName,
+                0,
+                status,
+                allocation.ResourceProfile?.TimesheetSubmissionFrozen ?? false));
         }
 
         return rows;
+    }
+
+    public async Task RestoreTimesheetSubmissionAsync(long resourceProfileId, CancellationToken cancellationToken = default)
+    {
+        if (currentUser.UserId is null)
+            throw new UnauthorizedException("Not authenticated.");
+        if (currentUser.Role != UserRole.Manager)
+            throw new ForbiddenException("Manager role required.");
+
+        var employee = await employeeRepository.GetByIdAsync(resourceProfileId, cancellationToken)
+            ?? throw new NotFoundException("Resource profile not found.");
+
+        if (employee.ManagerId != currentUser.UserId)
+            throw new ForbiddenException("You can only restore submission access for your direct reports.");
+
+        if (!employee.TimesheetSubmissionFrozen)
+            throw new BusinessRuleException("Timesheet submission is not restricted for this employee.");
+
+        employee.RestoreTimesheetSubmission(currentUser.UserId.Value, clock.UtcNow);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<TimesheetSubmissionContextDto> GetSubmissionContextAsync(CancellationToken cancellationToken = default)

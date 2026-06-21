@@ -10,4 +10,5 @@ public interface ITimesheetService
     Task<IReadOnlyList<TeamTimesheetRowDto>> ListTeamTimesheetsAsync(DateOnly weekStart, CancellationToken cancellationToken = default);
     Task<TimesheetSubmissionContextDto> GetSubmissionContextAsync(CancellationToken cancellationToken = default);
     Task<TimesheetReminderDto?> GetMissedTimesheetReminderAsync(CancellationToken cancellationToken = default);
+    Task RestoreTimesheetSubmissionAsync(long resourceProfileId, CancellationToken cancellationToken = default);
 }

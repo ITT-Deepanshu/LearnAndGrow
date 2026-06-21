@@ -25,7 +25,7 @@ public class LoginServiceTests
     {
         _clock.UtcNow.Returns(TestFixtures.FixedUtc);
         _hasher.Verify(Arg.Any<string>(), Arg.Any<string>()).Returns(true);
-        _tokens.GenerateAccessToken(Arg.Any<User>()).Returns("access");
+        _tokens.GenerateAccessToken(Arg.Any<User>(), Arg.Any<IReadOnlyList<string>>()).Returns("access");
     }
 
     private AuthService CreateService() => new(

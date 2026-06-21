@@ -28,6 +28,7 @@ public class ListAllocationsByEmployeeServiceTests
     {
         _current.UserId.Returns(5L);
         _current.Role.Returns(UserRole.Manager);
+        TestFixtures.SetupPermissions(_current, UserRole.Manager);
 
         var resourceProfile = TestFixtures.CreateResourceProfile(userId: 20, id: 4);
         TestFixtures.SetProperty(resourceProfile, "ManagerId", 99L);
@@ -44,6 +45,7 @@ public class ListAllocationsByEmployeeServiceTests
     {
         _current.UserId.Returns(5L);
         _current.Role.Returns(UserRole.Manager);
+        TestFixtures.SetupPermissions(_current, UserRole.Manager);
 
         var resourceProfile = TestFixtures.CreateResourceProfile(userId: 20, id: 4);
         resourceProfile.Deactivate(1, TestFixtures.FixedUtc);
@@ -60,6 +62,7 @@ public class ListAllocationsByEmployeeServiceTests
     {
         _current.UserId.Returns(5L);
         _current.Role.Returns(UserRole.Manager);
+        TestFixtures.SetupPermissions(_current, UserRole.Manager);
 
         var resourceProfile = TestFixtures.CreateResourceProfile(userId: 20, id: 4);
         TestFixtures.SetProperty(resourceProfile, "ManagerId", 5L);

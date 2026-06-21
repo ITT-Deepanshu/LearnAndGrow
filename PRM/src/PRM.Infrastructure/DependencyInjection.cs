@@ -8,6 +8,7 @@ using PRM.Application.Interfaces.Security;
 using PRM.Infrastructure.Ai;
 using PRM.Infrastructure.Auth;
 using PRM.Infrastructure.Common;
+using PRM.Infrastructure.Email;
 using PRM.Infrastructure.Scheduler;
 using PRM.Infrastructure.Security;
 
@@ -20,6 +21,7 @@ public static class DependencyInjection
         services.AddDataProtection();
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
         services.Configure<AiSettings>(configuration.GetSection(AiSettings.SectionName));
+        services.AddEmailServices(configuration);
 
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
         services.AddScoped<ITokenService, JwtTokenService>();

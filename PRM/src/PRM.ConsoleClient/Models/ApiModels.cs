@@ -7,7 +7,8 @@ public sealed record LoginResponse(
     bool RequiresPasswordChange,
     string Role,
     string FullName,
-    long? ResourceProfileId);
+    long? ResourceProfileId,
+    IReadOnlyList<string> Permissions);
 public sealed record MeResponse(
     long Id,
     string Username,
@@ -15,7 +16,8 @@ public sealed record MeResponse(
     string FullName,
     string Role,
     bool RequiresPasswordChange,
-    long? ResourceProfileId);
+    long? ResourceProfileId,
+    IReadOnlyList<string> Permissions);
 
 public sealed record CreateUserRequest(string FullName, string Email, string Username, string TemporaryPassword, string Role);
 public sealed record UserResponse(long Id, string Username, string Email, string FullName, string Role, bool IsActive, bool RequiresPasswordChange);
@@ -138,7 +140,13 @@ public sealed record Timesheet(
     IReadOnlyList<TimesheetEntry> Entries);
 
 public sealed record TimesheetListItem(long Id, DateOnly WeekStart, string Status, decimal TotalHours, DateTime? SubmittedAt);
-public sealed record TeamTimesheetRow(string EmployeeName, string ProjectName, decimal Hours, string Status);
+public sealed record TeamTimesheetRow(
+    long ResourceProfileId,
+    string EmployeeName,
+    string ProjectName,
+    decimal Hours,
+    string Status,
+    bool SubmissionFrozen);
 public sealed record ActivityTagItem(int Id, string Name, bool IsCustom);
 public sealed record TimesheetSubmissionContext(int MaxWeeklyHours, IReadOnlyList<ActivityTagItem> ActivityTags);
 public sealed record TimesheetReminder(DateOnly WeekStart, string Message);

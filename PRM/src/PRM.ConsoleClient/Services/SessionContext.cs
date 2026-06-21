@@ -8,8 +8,12 @@ public sealed class SessionContext
     public long? UserId { get; set; }
     public bool RequiresPasswordChange { get; set; }
     public long? ResourceProfileId { get; set; }
+    public HashSet<string> Permissions { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     public bool IsAuthenticated => !string.IsNullOrEmpty(AccessToken);
+
+    public bool HasPermission(string permission) =>
+        !string.IsNullOrWhiteSpace(permission) && Permissions.Contains(permission);
 
     public void SetLogin(LoginData login)
     {
@@ -19,6 +23,7 @@ public sealed class SessionContext
         RequiresPasswordChange = login.RequiresPasswordChange;
         UserId = login.UserId;
         ResourceProfileId = login.ResourceProfileId;
+        ApplyPermissions(login.Permissions);
     }
 
     public void ApplyMe(MeData me)
@@ -28,6 +33,7 @@ public sealed class SessionContext
         Role = me.Role;
         RequiresPasswordChange = me.RequiresPasswordChange;
         ResourceProfileId = me.ResourceProfileId;
+        ApplyPermissions(me.Permissions);
     }
 
     public void Clear()
@@ -38,6 +44,20 @@ public sealed class SessionContext
         UserId = null;
         RequiresPasswordChange = false;
         ResourceProfileId = null;
+        Permissions.Clear();
+    }
+
+    private void ApplyPermissions(IReadOnlyList<string>? permissions)
+    {
+        Permissions.Clear();
+        if (permissions is null)
+            return;
+
+        foreach (var permission in permissions)
+        {
+            if (!string.IsNullOrWhiteSpace(permission))
+                Permissions.Add(permission);
+        }
     }
 }
 
@@ -47,11 +67,13 @@ public sealed record LoginData(
     string Role,
     string FullName,
     long? UserId,
-    long? ResourceProfileId = null);
+    long? ResourceProfileId = null,
+    IReadOnlyList<string>? Permissions = null);
 
 public sealed record MeData(
     long Id,
     string FullName,
     string Role,
     bool RequiresPasswordChange,
-    long? ResourceProfileId);
+    long? ResourceProfileId,
+    IReadOnlyList<string>? Permissions = null);

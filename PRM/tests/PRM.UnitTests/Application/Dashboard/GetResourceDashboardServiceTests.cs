@@ -23,6 +23,7 @@ public class GetResourceDashboardServiceTests
     {
         _current.UserId.Returns(1L);
         _current.Role.Returns(UserRole.Manager);
+        TestFixtures.SetupPermissions(_current, UserRole.Manager);
         _clock.Today.Returns(TestFixtures.FixedToday);
 
         var bench = TestFixtures.CreateResourceProfile(userId: 2, id: 10, status: ResourceProfileStatus.Bench);
@@ -56,6 +57,7 @@ public class GetResourceDashboardServiceTests
     public async Task GetResourceDashboardAsync_ThrowsWhenNotManager()
     {
         _current.Role.Returns(UserRole.Resource);
+        TestFixtures.SetupPermissions(_current, UserRole.Resource);
 
         var act = () => CreateService().GetResourceDashboardAsync(CancellationToken.None);
 

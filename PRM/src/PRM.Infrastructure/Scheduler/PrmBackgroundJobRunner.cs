@@ -1,7 +1,9 @@
+using Hangfire;
 using Microsoft.Extensions.Logging;
 using PRM.Application.Interfaces.Common;
 using PRM.Application.Interfaces.Persistence;
 using PRM.Application.Interfaces.Scheduling;
+using PRM.Application.Notifications;
 using PRM.Domain.Entities;
 using PRM.Domain.Enums;
 using PRM.Domain.Helpers;
@@ -17,26 +19,35 @@ public sealed class PrmBackgroundJobRunner(
     IProjectRepository projectRepository,
     ITimesheetRepository timesheetRepository,
     ISystemConfigRepository systemConfigRepository,
+    INotificationService notificationService,
     ILogger<PrmBackgroundJobRunner> logger) : IPrmBackgroundJobRunner
 {
     private const long SystemActorId = 0;
     private readonly ProjectHealthDomainService _healthService = new();
 
+    [DisableConcurrentExecution(timeoutInSeconds: 600)]
     public async Task RunScheduledJobsAsync(CancellationToken cancellationToken = default)
     {
         var today = clock.Today;
         var utcNow = clock.UtcNow;
         var config = await systemConfigRepository.GetAsync(cancellationToken);
 
-        await RecomputeUtilisationAsync(today, cancellationToken);
+        await RecomputeUtilisationAsync(today, utcNow, cancellationToken);
         await RecomputeProjectHealthAsync(config.MaxWeeklyHours, today, utcNow, cancellationToken);
         await DetectMissedTimesheetsAsync(today, utcNow, cancellationToken);
 
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+        unitOfWork.ClearChangeTracker();
+
+        await notificationService.ProcessTimesheetComplianceEmailsAsync(cancellationToken);
+        await notificationService.ProcessProjectAtRiskEmailsAsync(cancellationToken);
+
         logger.LogInformation("PRM scheduled background jobs completed at {UtcNow}", utcNow);
     }
 
-    private async Task RecomputeUtilisationAsync(DateOnly today, CancellationToken cancellationToken)
+    private async Task RecomputeUtilisationAsync(
+        DateOnly today,
+        DateTime utcNow,
+        CancellationToken cancellationToken)
     {
         var employees = await employeeRepository.ListAsync(status: null, department: null, managerId: null, cancellationToken);
 
@@ -49,7 +60,8 @@ public sealed class PrmBackgroundJobRunner(
                 cancellationToken);
 
             var total = AllocationCapacityHelper.CalculateTotalUtilisation(allocations, today, today);
-            employee.RecomputeStatus(total);
+            if (employee.RecomputeStatus(total, SystemActorId, utcNow))
+                await unitOfWork.SaveChangesAsync(cancellationToken);
         }
     }
 
@@ -95,7 +107,8 @@ public sealed class PrmBackgroundJobRunner(
                 ? health.DisplayLabel
                 : string.Join("; ", health.RiskFlags);
 
-            project.SetHealth(health.Status, reason, SystemActorId, utcNow);
+            if (project.SetHealth(health.Status, reason, SystemActorId, utcNow))
+                await unitOfWork.SaveChangesAsync(cancellationToken);
         }
     }
 
@@ -123,7 +136,8 @@ public sealed class PrmBackgroundJobRunner(
                 continue;
 
             timesheetRepository.Add(Timesheet.CreateMissed(employee.Id, weekStart, SystemActorId, utcNow));
+            employee.SyncMissedTimesheetWeek(weekStart, SystemActorId, utcNow);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
         }
     }
-
 }

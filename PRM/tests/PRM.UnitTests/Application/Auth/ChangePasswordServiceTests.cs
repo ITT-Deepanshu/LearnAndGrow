@@ -25,7 +25,7 @@ public class ChangePasswordServiceTests
         _current.UserId.Returns(2L);
         _clock.UtcNow.Returns(TestFixtures.FixedUtc);
         _hasher.Hash(Arg.Any<string>()).Returns("new-hash");
-        _tokens.GenerateAccessToken(Arg.Any<PRM.Domain.Entities.User>()).Returns("fresh-token");
+        _tokens.GenerateAccessToken(Arg.Any<PRM.Domain.Entities.User>(), Arg.Any<IReadOnlyList<string>>()).Returns("fresh-token");
     }
 
     private AuthService CreateService() => new(

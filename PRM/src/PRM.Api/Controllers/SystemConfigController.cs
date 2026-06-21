@@ -1,13 +1,16 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PRM.Api.Authorization;
 using PRM.Application.SystemConfig;
+using PRM.Domain.Constants;
 
 namespace PRM.Api.Controllers;
 
 /// <summary>Global system settings: Gemma API key, scheduler interval, and max weekly hours. Admin only.</summary>
 [ApiController]
 [Route("api/v1/system-config")]
-[Authorize(Roles = "admin")]
+[Authorize]
+[RequirePermission(RolePermissions.SystemManage)]
 [Tags("System Config")]
 public sealed class SystemConfigController(ISystemConfigService systemConfigService) : ControllerBase
 {

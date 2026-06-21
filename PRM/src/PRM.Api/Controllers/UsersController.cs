@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PRM.Api.Authorization;
 using PRM.Application.Users;
+using PRM.Domain.Constants;
 using PRM.Domain.Enums;
 using PRM.Domain.Exceptions;
 
@@ -9,7 +11,8 @@ namespace PRM.Api.Controllers;
 /// <summary>User account lifecycle: create, list, reset password, activate/deactivate. Admin only.</summary>
 [ApiController]
 [Route("api/v1/users")]
-[Authorize(Roles = "admin")]
+[Authorize]
+[RequirePermission(RolePermissions.UsersManage)]
 [Tags("Users")]
 public sealed class UsersController(IUserService userService) : ControllerBase
 {

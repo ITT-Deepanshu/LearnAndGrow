@@ -4,6 +4,7 @@ using PRM.Application.Common;
 using PRM.Application.Interfaces.Common;
 using PRM.Domain.Enums;
 using PRM.Domain.Exceptions;
+using PRM.UnitTests.Common;
 
 namespace PRM.UnitTests.Application.Common;
 
@@ -15,6 +16,7 @@ public class CurrentUserGuardsTests
         var user = Substitute.For<ICurrentUser>();
         user.UserId.Returns(1L);
         user.Role.Returns(UserRole.Admin);
+        TestFixtures.SetupPermissions(user, UserRole.Admin);
 
         var act = () => CurrentUserGuards.EnsureAdmin(user);
         act.Should().NotThrow();
@@ -26,6 +28,7 @@ public class CurrentUserGuardsTests
         var user = Substitute.For<ICurrentUser>();
         user.UserId.Returns(2L);
         user.Role.Returns(UserRole.Resource);
+        TestFixtures.SetupPermissions(user, UserRole.Resource);
 
         var act = () => CurrentUserGuards.EnsureManager(user);
         act.Should().Throw<ForbiddenException>();
@@ -37,6 +40,7 @@ public class CurrentUserGuardsTests
         var user = Substitute.For<ICurrentUser>();
         user.UserId.Returns(5L);
         user.Role.Returns(UserRole.Manager);
+        TestFixtures.SetupPermissions(user, UserRole.Manager);
 
         var act = () => CurrentUserGuards.EnsureOwnsProject(user, 99L);
         act.Should().Throw<ForbiddenException>();

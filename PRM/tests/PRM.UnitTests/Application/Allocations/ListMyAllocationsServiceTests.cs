@@ -27,6 +27,7 @@ public class ListMyAllocationsServiceTests
     {
         _current.UserId.Returns(20L);
         _current.Role.Returns(UserRole.Resource);
+        TestFixtures.SetupPermissions(_current, UserRole.Resource);
 
         var resourceProfile = TestFixtures.CreateResourceProfile(userId: 20, id: 4);
         _employees.GetByUserIdAsync(20, Arg.Any<CancellationToken>()).Returns(resourceProfile);
@@ -45,6 +46,7 @@ public class ListMyAllocationsServiceTests
     {
         _current.UserId.Returns(1L);
         _current.Role.Returns(UserRole.Manager);
+        TestFixtures.SetupPermissions(_current, UserRole.Manager);
 
         var act = () => CreateService().ListMyAllocationsAsync(CancellationToken.None);
 

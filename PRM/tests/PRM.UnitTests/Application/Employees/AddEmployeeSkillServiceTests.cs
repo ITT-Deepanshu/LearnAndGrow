@@ -23,6 +23,7 @@ public class AddEmployeeSkillServiceTests
     {
         _current.UserId.Returns(1L);
         _current.Role.Returns(UserRole.Admin);
+        TestFixtures.SetupPermissions(_current, UserRole.Admin);
         _clock.UtcNow.Returns(TestFixtures.FixedUtc);
         _employees.GetByIdWithSkillsAsync(10, Arg.Any<CancellationToken>())
             .Returns(TestFixtures.CreateResourceProfile());
@@ -46,6 +47,7 @@ public class AddEmployeeSkillServiceTests
     public async Task AddSkillAsync_ThrowsWhenNotAdmin()
     {
         _current.Role.Returns(UserRole.Manager);
+        TestFixtures.SetupPermissions(_current, UserRole.Manager);
         var dto = new AddResourceProfileSkillDto("C#", SkillCategory.Backend, SkillProficiency.Advanced);
 
         var act = () => CreateService().AddSkillAsync(10, dto, CancellationToken.None);

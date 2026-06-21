@@ -1,4 +1,7 @@
 using System.Reflection;
+using NSubstitute;
+using PRM.Application.Auth;
+using PRM.Application.Interfaces.Common;
 using PRM.Domain.Entities;
 using PRM.Domain.Enums;
 namespace PRM.UnitTests.Common;
@@ -47,6 +50,7 @@ internal static class TestFixtures
         var profile = ResourceProfile.Create(userId, "Test User", "Backend", "Developer", 1, FixedUtc);
         SetId(profile, id);
         var user = CreateUser(UserRole.Resource, id: userId);
+        SetProperty(user, "Email", "employee@example.com");
         SetProperty(profile, "User", user);
         profile.RecomputeStatus(status switch
         {
@@ -56,6 +60,47 @@ internal static class TestFixtures
             _ => 0
         });
         return profile;
+    }
+
+    public static ResourceProfile CreateResourceProfileWithManager(
+        long userId = 20,
+        long id = 4,
+        long managerUserId = 5,
+        string employeeEmail = "employee@example.com",
+        string managerEmail = "manager@example.com")
+    {
+        var manager = CreateUser(UserRole.Manager, id: managerUserId);
+        SetProperty(manager, "Email", managerEmail);
+
+        var profile = CreateResourceProfile(userId, id, ResourceProfileStatus.Allocated);
+        SetProperty(profile.User, "Email", employeeEmail);
+        SetProperty(profile, "ManagerId", managerUserId);
+        SetProperty(profile, "Manager", manager);
+        return profile;
+    }
+
+    public static Project CreateAtRiskProject(long managerId = 5, long id = 201, string? managerEmail = "pm@example.com")
+    {
+        var project = CreateProject(managerId, ProjectStatus.Active, id);
+        project.SetHealth(HealthStatus.Red, "Alpha milestone is 5 days overdue", 0, FixedUtc);
+
+        if (managerEmail is not null)
+        {
+            var manager = CreateUser(UserRole.Manager, id: managerId);
+            SetProperty(manager, "Email", managerEmail);
+            SetProperty(project, "Manager", manager);
+        }
+
+        return project;
+    }
+
+    public static void SetupPermissions(ICurrentUser user, UserRole role)
+    {
+        var permissions = UserPermissionMapper.GetPermissionsForRole(role)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        user.Permissions.Returns(permissions);
+        user.HasPermission(Arg.Any<string>())
+            .Returns(call => permissions.Contains(call.Arg<string>()));
     }
 
     public static Project CreateProject(

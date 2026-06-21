@@ -20,6 +20,7 @@ public class Project : AuditableEntity
     public int TotalStoryPoints { get; private set; }
     public HealthStatus Health { get; private set; } = HealthStatus.Green;
     public string? HealthReason { get; private set; }
+    public DateTime? AtRiskNotificationSentAt { get; private set; }
     public bool IsActive { get; private set; } = true;
 
     public User Manager { get; private set; } = null!;
@@ -99,10 +100,23 @@ public class Project : AuditableEntity
         milestone.UpdateStatus(status, actorId, utcNow);
     }
 
-    public void SetHealth(HealthStatus health, string reason, long actorId, DateTime utcNow)
+    public bool SetHealth(HealthStatus health, string reason, long actorId, DateTime utcNow)
     {
+        var clearAtRiskFlag = health != HealthStatus.Red && AtRiskNotificationSentAt is not null;
+        if (Health == health && HealthReason == reason && !clearAtRiskFlag)
+            return false;
+
         Health = health;
         HealthReason = reason;
+        if (health != HealthStatus.Red)
+            AtRiskNotificationSentAt = null;
+        SetModified(actorId, utcNow);
+        return true;
+    }
+
+    public void MarkAtRiskNotificationSent(DateTime utcNow, long actorId)
+    {
+        AtRiskNotificationSentAt = utcNow;
         SetModified(actorId, utcNow);
     }
 }

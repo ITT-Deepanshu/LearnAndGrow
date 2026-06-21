@@ -23,6 +23,7 @@ public class ProjectQueryServiceTests
     {
         _current.UserId.Returns(1L);
         _current.Role.Returns(UserRole.Manager);
+        TestFixtures.SetupPermissions(_current, UserRole.Manager);
         _clock.UtcNow.Returns(TestFixtures.FixedUtc);
     }
 
@@ -51,6 +52,7 @@ public class ProjectQueryServiceTests
     public async Task UpdateProjectAsync_UpdatesWhenAdminAndManagerValid()
     {
         _current.Role.Returns(UserRole.Admin);
+        TestFixtures.SetupPermissions(_current, UserRole.Admin);
         var project = TestFixtures.CreateProject(managerId: 5, id: 302);
         _projects.GetByIdAsync(302, Arg.Any<CancellationToken>()).Returns(project);
         _users.GetByIdAsync(5, Arg.Any<CancellationToken>()).Returns(TestFixtures.CreateUser(UserRole.Manager, id: 5));
